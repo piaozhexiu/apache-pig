@@ -159,9 +159,9 @@ public class TezCompilerUtil {
             edge.outputClassName = OnFileUnorderedKVOutput.class.getName();
             edge.inputClassName = ShuffledUnorderedKVInput.class.getName();
         } else if (dataMovementType == DataMovementType.SCATTER_GATHER) {
-            //Use unsorted shuffle with TEZ-661 and PIG-3775.
+            edge.outputClassName = OnFileUnorderedPartitionedKVOutput.class.getName();
+            edge.inputClassName = ShuffledUnorderedKVInput.class.getName();
             edge.partitionerClass = RoundRobinPartitioner.class;
-            edge.setIntermediateOutputKeyComparatorClass(POValueOutputTez.EmptyWritableComparator.class.getName());
         }
         edge.setIntermediateOutputKeyClass(POValueOutputTez.EmptyWritable.class.getName());
         edge.setIntermediateOutputValueClass(TUPLE_CLASS);
