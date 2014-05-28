@@ -24,16 +24,15 @@ import org.apache.pig.Accumulator;
 import org.apache.pig.PigException;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
-import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 
 /**
  * Core logic for applying an accumulative/algebraic math function to a
  * bag of doubles.
  */
+@OutputSchema("int")
 public abstract class AlgebraicIntMathBase extends AlgebraicMathBase<Integer> implements Accumulator<Integer> {
 
     protected static Integer getSeed(KNOWN_OP op) {
@@ -125,11 +124,6 @@ public abstract class AlgebraicIntMathBase extends AlgebraicMathBase<Integer> im
                 throw new ExecException("Error executing function ", errCode, PigException.BUG, e);
             }
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.INTEGER));
     }
 
     /* Accumulator interface implementation*/

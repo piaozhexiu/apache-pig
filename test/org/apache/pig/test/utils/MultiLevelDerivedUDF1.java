@@ -21,20 +21,17 @@ package org.apache.pig.test.utils;
 import java.io.IOException;
 
 import org.apache.pig.EvalFunc;
-import org.apache.pig.data.DataType;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 abstract class MyAbstractEvalFunc1<T> extends EvalFunc<T> {
 }
 
+@OutputSchema("double")
+@Unique
 public class MultiLevelDerivedUDF1  extends MyAbstractEvalFunc1<Double>{
     public Double exec(Tuple input) throws IOException {
         return new Double(1);
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.DOUBLE));
     }
 }

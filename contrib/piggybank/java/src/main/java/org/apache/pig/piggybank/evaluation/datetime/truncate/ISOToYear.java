@@ -71,6 +71,8 @@ package org.apache.pig.piggybank.evaluation.datetime.truncate;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.FuncSpec;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
@@ -81,6 +83,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+@OutputSchema("chararray")
+@Unique
 public class ISOToYear extends EvalFunc<String> {
 
     @Override
@@ -95,11 +99,6 @@ public class ISOToYear extends EvalFunc<String> {
         DateTime result = dt.monthOfYear().setCopy(1).dayOfMonth().setCopy(1).hourOfDay().setCopy(0).minuteOfHour().setCopy(0).secondOfMinute().setCopy(0).millisOfSecond().setCopy(0);
 
         return result.toString();
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.CHARARRAY));
     }
 
     @Override

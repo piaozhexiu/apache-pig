@@ -21,9 +21,9 @@ import java.io.IOException;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.PigWarning;
-import org.apache.pig.data.DataType;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 /**
 * <dl>
@@ -38,20 +38,11 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
 * arithmetic_expression can only be numeric types.</dd>
 * </dl>
 */
-
+@OutputSchema("chararray")
+@Unique
 public class Bin extends EvalFunc<String> {
 
     int numParams = -1;
-    @Override
-    public Schema outputSchema(Schema input) {
-        try {
-            return new Schema(new Schema.FieldSchema(getSchemaName(this
-                    .getClass().getName().toLowerCase(), input),
-                    DataType.CHARARRAY));
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
     @Override
     public String exec(Tuple tuple) throws IOException {

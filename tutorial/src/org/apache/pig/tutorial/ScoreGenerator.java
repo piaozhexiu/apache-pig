@@ -25,13 +25,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.pig.EvalFunc;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataBag;
-import org.apache.pig.data.DataType;
 import org.apache.pig.data.DefaultBagFactory;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-import org.apache.pig.impl.logicalLayer.FrontendException;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 /**
  * For each n-gram, we have a set of (hour, count) pairs.
@@ -44,7 +43,8 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  * in this particular hour is at least one standard deviation away 
  * from the average frequency among all hours
  */
-
+@OutputSchema("${0}:{hour:chararray,score:double,count:long,mean:double}")
+@Unique("${0}")
 public class ScoreGenerator extends EvalFunc<DataBag> {
 
     private static double computeMean(List<Long> counts) {
@@ -113,27 +113,4 @@ public class ScoreGenerator extends EvalFunc<DataBag> {
             return null;
         }
     }
-
-    @Override
-    /**
-     * This method gives a name to the column.
-     * @param input - schema of the input data
-     * @return schema of the output data
-     */
-     public Schema outputSchema(Schema input) {
-         Schema bagSchema = new Schema();
-         bagSchema.add(new Schema.FieldSchema("hour", DataType.CHARARRAY));
-         bagSchema.add(new Schema.FieldSchema("score", DataType.DOUBLE));
-         bagSchema.add(new Schema.FieldSchema("count", DataType.LONG));
-         bagSchema.add(new Schema.FieldSchema("mean", DataType.DOUBLE));
-         //TODO
-         //Here the schema of the bag is the schema of the tuple inside the bag
-         //We need to change this so that the bag has the tuple and the tuple has the schema
-         try{
-            return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), bagSchema, DataType.BAG));
-         }catch (FrontendException e){
-             return null;
-         }
-     }
-
 }

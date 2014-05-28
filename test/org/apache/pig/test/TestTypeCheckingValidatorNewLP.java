@@ -51,6 +51,7 @@ import org.apache.pig.ExecType;
 import org.apache.pig.FuncSpec;
 import org.apache.pig.PigServer;
 import org.apache.pig.backend.hadoop.datastorage.ConfigurationUtil;
+import org.apache.pig.builtin.OutputSchema;
 import org.apache.pig.builtin.PigStorage;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataByteArray;
@@ -3786,29 +3787,12 @@ public class TestTypeCheckingValidatorNewLP {
          * A test UDF that does not data processing but implements the getOutputSchema for
          * checking the type checker
          */
+        @OutputSchema("{(chararray,int,float)}")
         public static class TestBinCondFieldSchema extends EvalFunc<DataBag> {
             //no-op exec method
             @Override
             public DataBag exec(Tuple input) {
                 return null;
-            }
-
-            @Override
-            public Schema outputSchema(Schema input) {
-                Schema.FieldSchema charFs = new FieldSchema(null, DataType.CHARARRAY);
-                Schema.FieldSchema intFs = new FieldSchema(null, DataType.INTEGER);
-                Schema.FieldSchema floatFs = new FieldSchema(null, DataType.FLOAT);
-                Schema bagSchema = new Schema();
-                bagSchema.add(charFs);
-                bagSchema.add(intFs);
-                bagSchema.add(floatFs);
-                Schema.FieldSchema bagFs;
-                try {
-                    bagFs = new Schema.FieldSchema(null, bagSchema, DataType.BAG);
-                } catch (FrontendException fee) {
-                    return null;
-                }
-                return new Schema(bagFs);
             }
         }
 

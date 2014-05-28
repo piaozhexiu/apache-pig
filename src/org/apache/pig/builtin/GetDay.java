@@ -70,6 +70,8 @@ import org.joda.time.DateTime;
  * (2007,3,10,2007,5,3,5,3,53)
  * </pre>
  */
+@OutputSchema("int")
+@Unique
 public class GetDay extends EvalFunc<Integer> {
     
     @Override
@@ -79,11 +81,6 @@ public class GetDay extends EvalFunc<Integer> {
         }
         
         return ((DateTime) input.get(0)).getDayOfMonth();
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.INTEGER));
     }
 
     @Override

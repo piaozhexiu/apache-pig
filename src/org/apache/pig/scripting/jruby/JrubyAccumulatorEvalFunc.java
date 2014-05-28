@@ -19,16 +19,13 @@
 package org.apache.pig.scripting.jruby;
 
 import java.io.IOException;
-import java.util.Map;
 
 import org.apache.pig.AccumulatorEvalFunc;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
-import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.scripting.jruby.JrubyScriptEngine.RubyFunctions;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
-
+import org.apache.pig.scripting.jruby.JrubyScriptEngine.RubyFunctions;
 import org.jruby.Ruby;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -112,7 +109,10 @@ public class JrubyAccumulatorEvalFunc extends AccumulatorEvalFunc<Object> {
     public Schema outputSchema(Schema input) {
         if (!isInitialized)
             initialize();
+        RubySchema.setNextSchemaId(nextSchemaId);
         RubySchema rs = PigJrubyLibrary.pigToRuby(ruby, input);
-        return PigJrubyLibrary.rubyToPig(rubyEngine.callMethod(classObject, "get_output_schema", rs, RubySchema.class));
+        Schema result = PigJrubyLibrary.rubyToPig(rubyEngine.callMethod(classObject, "get_output_schema", rs, RubySchema.class));
+        nextSchemaId = RubySchema.getNextSchemaId();
+        return result;
     }
 }

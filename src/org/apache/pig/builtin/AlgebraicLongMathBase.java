@@ -24,16 +24,15 @@ import org.apache.pig.Accumulator;
 import org.apache.pig.PigException;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
-import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 
 /**
  * Core logic for applying an accumulative/algebraic math function to a
  * bag of Longs.
  */
+@OutputSchema("long")
 public abstract class AlgebraicLongMathBase extends AlgebraicMathBase<Long> implements Accumulator<Long> {
 
     protected static Long getSeed(KNOWN_OP op) {
@@ -127,11 +126,6 @@ public abstract class AlgebraicLongMathBase extends AlgebraicMathBase<Long> impl
                 throw new ExecException("Error executing function on Longs", errCode, PigException.BUG, e);
             }
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.LONG));
     }
 
     /* Accumulator interface implementation*/

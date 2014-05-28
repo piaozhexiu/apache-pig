@@ -23,14 +23,13 @@ import java.util.Map;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.PigException;
 import org.apache.pig.backend.executionengine.ExecException;
-import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 
 /**
  * This method should never be used directly, use {@link SIZE}.
  */
+@OutputSchema("long")
 public class MapSize extends EvalFunc<Long> {
 
     @SuppressWarnings("unchecked")
@@ -47,10 +46,4 @@ public class MapSize extends EvalFunc<Long> {
             throw new ExecException(msg, errCode, PigException.BUG, e);
         }
     }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.LONG)); 
-    }
-
 }

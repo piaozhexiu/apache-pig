@@ -1,4 +1,4 @@
-import logging
+import logging, functools
 
 class udf_logging(object):
     udf_log_level = logging.INFO
@@ -19,12 +19,27 @@ class udf_logging(object):
     def set_log_level_debug(cls):
         cls.udf_log_level = logging.DEBUG
 
-def outputSchema(schema_str):
+def outputSchema(value=None, useInputSchema=False):
     def wrap(f):
         def wrapped_f(*args):
             return f(*args)
         return wrapped_f
     return wrap
+
+def unique(value=None):
+    func = None
+    if hasattr(value, '__call__'):           
+        func = value
+        value = []
+    elif value is None:
+        value = []
+    def decorator(func):
+        func.fields = value
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator(func) if func else decorator 
 
 def write_user_exception(filename, stream_err_output, num_lines_offset_trace=0):
     import sys

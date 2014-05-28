@@ -28,7 +28,6 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.joda.time.DateTime;
-import org.joda.time.Days;
 
 /**
  * <p>DaysBetween returns the number of days between two DateTime objects</p>
@@ -73,6 +72,8 @@ import org.joda.time.Days;
  *
  * </pre>
  */
+@OutputSchema("long")
+@Unique
 public class DaysBetween extends EvalFunc<Long> {
 
     @Override
@@ -90,11 +91,6 @@ public class DaysBetween extends EvalFunc<Long> {
         return (startDate.getMillis() - endDate.getMillis()) / 86400000L;
 
     }
-
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.LONG));
-	}
 
     @Override
     public List<FuncSpec> getArgToFuncMapping() throws FrontendException {

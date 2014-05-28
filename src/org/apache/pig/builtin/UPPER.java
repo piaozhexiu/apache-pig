@@ -37,6 +37,8 @@ import org.apache.pig.FuncSpec;
  *      A = load 'mydata' as (name);
  *      B = foreach A generate UPPER(name);
  */
+@OutputSchema("chararray")
+@Unique
 public class UPPER extends EvalFunc<String> {
 
     /** 
@@ -63,16 +65,6 @@ public class UPPER extends EvalFunc<String> {
             warn("Error processing input "+input.get(0), PigWarning.UDF_WARNING_1);
             return null;
         }
-    }
-
-    /**
-     * This method gives a name to the column. 
-     * @param input - schema of the input data
-     * @return schema of the input data
-     */
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.CHARARRAY));
     }
 
     /* (non-Javadoc)

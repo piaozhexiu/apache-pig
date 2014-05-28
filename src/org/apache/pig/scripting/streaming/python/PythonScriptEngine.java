@@ -27,6 +27,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
@@ -58,7 +59,9 @@ public class PythonScriptEngine extends ScriptEngine {
         for(String[] functionInfo : functions) {
             String name = functionInfo[0];
             String schemaString = functionInfo[1];
-            String schemaLineNumber = functionInfo[2];
+            String useInputSchema = functionInfo[2];
+            String uniqueFields = functionInfo[3];
+            String schemaLineNumber = functionInfo[4];
             String alias = namespace + name;
             String execType = (pigContext.getExecType() == ExecType.LOCAL? "local" : "mapreduce");
             String isIllustrate = (Boolean.valueOf(pigContext.inIllustrator)).toString();
@@ -68,8 +71,8 @@ public class PythonScriptEngine extends ScriptEngine {
                                                 new String[] {
                                                     "python", 
                                                     fileName, name, 
-                                                    schemaString, schemaLineNumber,
-                                                    execType, isIllustrate
+                                                    schemaString, useInputSchema, uniqueFields,
+                                                    schemaLineNumber, execType, isIllustrate,
                                         }));
         }
         fin.close();
@@ -93,7 +96,12 @@ public class PythonScriptEngine extends ScriptEngine {
         throw new IOException("Unsupported Operation");
     }
     
-    private static final Pattern pSchema = Pattern.compile("^\\s*\\W+outputSchema.*");
+    private static final Pattern pSchema = Pattern.compile("^\\s*\\W+outputSchema\\((.*)\\)$");
+    private static final Pattern pSchemaTrim = Pattern.compile("(?i)value|useInputSchema|[\\=\"'\\s+]");
+    
+    private static final Pattern pUnique = Pattern.compile("^\\s*\\W+unique(\\((.*)\\))?$");
+    private static final Pattern pUniqueTrim = Pattern.compile("(?i)value|[\\=\\\"\\'\\[\\]\\s+]");
+    
     private static final Pattern pDef = Pattern.compile("^\\s*def\\s+(\\w+)\\s*.+");
 
     private static List<String[]> getFunctions(InputStream is) throws IOException {
@@ -102,22 +110,36 @@ public class PythonScriptEngine extends ScriptEngine {
         BufferedReader br = new BufferedReader(in);
         String line = br.readLine();
         String schemaString = null;
+        String useInputSchema = null;
+        String uniqueFields = null; //comma separated string of unique fields name
         String schemaLineNumber = null;
         int lineNumber = 1;
         while (line != null) {
-            if (pSchema.matcher(line).matches()) {
-                int start = line.indexOf("(") + 2; //drop brackets/quotes
-                int end = line.lastIndexOf(")") - 1;
-                schemaString = line.substring(start,end).trim();
+            Matcher matcher = pSchema.matcher(line);
+            if (matcher.matches()) {
+                String schemaDef = matcher.group(1);
+                String[] split = schemaDef.split("\",");
+                schemaString = pSchemaTrim.matcher(split[0]).replaceAll("");
+                if (split.length == 2) {
+                    useInputSchema = pSchemaTrim.matcher(split[1]).replaceAll("");
+                }
                 schemaLineNumber = "" + lineNumber;
-            } else if (pDef.matcher(line).matches()) {
-                int start = line.indexOf("def ") + "def ".length();
-                int end = line.indexOf('(');
-                String functionName = line.substring(start, end).trim();
-                if (schemaString != null) {
-                    String[] funcInfo = {functionName, schemaString, "" + schemaLineNumber};
-                    functions.add(funcInfo);
-                    schemaString = null;
+            } else {
+                matcher = pUnique.matcher(line);
+                if (matcher.matches()) {
+                    String uniqueDef = matcher.group(2);
+                    uniqueFields = uniqueDef == null ? "" : pUniqueTrim.matcher(uniqueDef).replaceAll("");
+                }
+                else if (pDef.matcher(line).matches()) {
+                    int start = line.indexOf("def ") + "def ".length();
+                    int end = line.indexOf('(');
+                    String functionName = line.substring(start, end).trim();
+                    if (schemaString != null) {
+                        String[] funcInfo = {functionName, schemaString, useInputSchema, uniqueFields, "" + schemaLineNumber};
+                        functions.add(funcInfo);
+                        schemaString = null;
+                        useInputSchema = null;
+                    }
                 }
             }
             line = br.readLine();

@@ -18,17 +18,15 @@
 package org.apache.pig.builtin;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.math.BigDecimal;
+import java.util.Iterator;
 
 import org.apache.pig.Accumulator;
 import org.apache.pig.PigException;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
-import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 
 /**
@@ -36,6 +34,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  * bag of BigDecimals.
  * This is a modified version of AlgebraicDoubleMathBase
  */
+@OutputSchema("bigdecimal")
 public abstract class AlgebraicBigDecimalMathBase extends AlgebraicMathBase<BigDecimal> implements Accumulator<BigDecimal> {
 
     protected static BigDecimal getSeed(KNOWN_OP op) {
@@ -149,11 +148,6 @@ public abstract class AlgebraicBigDecimalMathBase extends AlgebraicMathBase<BigD
                 throw new ExecException("Error executing function on BigDecimal", errCode, PigException.BUG, e);
             }
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.BIGDECIMAL));
     }
 
     /* Accumulator interface implementation*/

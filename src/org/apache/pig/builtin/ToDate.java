@@ -77,6 +77,8 @@ import org.joda.time.format.ISODateTimeFormat;
  * <dd><code>the DateTime object</code>.</dd>
  * </dl>
  */
+@OutputSchema("datetime")
+@Unique
 public class ToDate extends EvalFunc<DateTime> {
 
     private static final DateTimeFormatter isoDateTimeFormatter = ISODateTimeFormat
@@ -87,12 +89,6 @@ public class ToDate extends EvalFunc<DateTime> {
             return null;
         }
         return new DateTime(DataType.toLong(input.get(0)));
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass()
-                .getName().toLowerCase(), input), DataType.DATETIME));
     }
 
     @Override

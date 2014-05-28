@@ -34,6 +34,7 @@ import org.apache.pig.impl.logicalLayer.FrontendException;
  * Returns a string, with leading and trailing whitespace omitted.
  * Implements a binding to the Java function {@link java.lang.String#trim() String.trim()}.
  */
+@OutputSchema("chararray")
 public class TRIM extends EvalFunc<String> {
     @Override
     public String exec(Tuple input) throws IOException {
@@ -49,11 +50,6 @@ public class TRIM extends EvalFunc<String> {
             warn("Error reading input: " + e.getMessage(), PigWarning.UDF_WARNING_1);
             return null;
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.CHARARRAY));
     }
 
     /* (non-Javadoc)

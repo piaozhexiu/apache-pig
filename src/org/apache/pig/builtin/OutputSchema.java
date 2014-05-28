@@ -24,6 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.classification.InterfaceAudience;
 import org.apache.pig.classification.InterfaceStability;
+import org.apache.pig.data.DataType;
 
 /**
  * An EvalFunc can annotated with an <code>OutputSchema</code> to
@@ -36,8 +37,40 @@ import org.apache.pig.classification.InterfaceStability;
  * Implementing a custom {@link EvalFunc#outputSchema(Schema)} will
  * override the annotation (unless you deal with it explicitly, or by calling <code>super.outputSchema(schema)</code>).
  * <p>
- * Here's an example of a complex schema declared in an annotation:
- * <code>@OutputSchema("y:bag{t:tuple(len:int,word:chararray)}")</code>
+ * Defined schemas can be either simple or complex.<br>
+ * Simple:<br>
+ * - is in form of (<code>[alias][:type]</code>)<br>
+ * - if type is {@link DataType#isComplex(byte) complex} and <code>useInputSchema</code> is set, 
+ *   input schema will be incorporated into the schema<br>
+ * <br>
+ * Example:
+ * <pre>
+ * Given the input schema: (i: int). Then:
+ * <code>{@literal @}OutputSchema(value = "t:tuple", useInputSchema = true)</code>
+ * will result in: {t: ((i: int))}</pre>
+ * 
+ * Complex:<br>
+ * - everything else<br>
+ * - <code>useInputSchema</code> has no effect here<br>
+ * <br>
+ * Example:
+ * <pre>
+ * package com.example;
+ * 
+ * {@literal @}OutputSchema("data:bytearray,y:bag{t:tuple(len:int,id:chararray,${0}:int)},data:chararray")
+ * {@link Unique @Unique}({"id", "${0}", "data"})
+ * public class MyFunc extends EvalFunc {...}
+ * 
+ * This yields to the following unique fields:
+ * data -> data_[nextSchemaId]
+ * id -> id_[nextSchemaId]
+ * ${0} ->  com_example_myfunc_[nextSchemaId]
+ * data ->  data_[nextSchemaId]
+ * where [nextSchemaId] in a consecutively increasing integer.
+ * <br> 
+ * Thus the resulting schema is:
+ * {data_[nextSchemaId]: bytearray,y: {t: (len: int,id_[nextSchemaId]: chararray,com_example_myfunc_[nextSchemaId]: int)},data_[nextSchemaId]: chararray}
+ * </pre>
  */
 @InterfaceAudience.Public
 @InterfaceStability.Unstable
@@ -45,4 +78,5 @@ import org.apache.pig.classification.InterfaceStability;
 @Retention(value=RetentionPolicy.RUNTIME)
 public @interface OutputSchema {
     String value();
+    boolean useInputSchema() default false;
 }

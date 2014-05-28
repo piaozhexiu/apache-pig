@@ -23,6 +23,8 @@ import java.util.List;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.FuncSpec;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
@@ -79,7 +81,8 @@ import org.joda.time.DateTime;
  * (2008-01-01T00:00:00.000Z,2008-02-01T00:00:00.000Z,2008-02-04T00:00:00.000Z,2008-02-06T00:00:00.000Z,2008-02-06T02:00:00.000Z,2008-02-06T02:06:00.000Z,2008-02-06T02:06:02.000Z)
  * (2007-01-01T00:00:00.000Z,2007-03-01T00:00:00.000Z,2007-03-05T00:00:00.000Z,2007-03-05T00:00:00.000Z,2007-03-05T03:00:00.000Z,2007-03-05T03:05:00.000Z,2007-03-05T03:05:03.000Z)
  */
-
+@OutputSchema("chararray")
+@Unique
 public class ISOToHour extends EvalFunc<String> {
 
     @Override
@@ -94,11 +97,6 @@ public class ISOToHour extends EvalFunc<String> {
         DateTime result = dt.minuteOfHour().setCopy(0).secondOfMinute().setCopy(0).millisOfSecond().setCopy(0);
 
         return result.toString();
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.CHARARRAY));
     }
 
     @Override

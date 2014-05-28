@@ -29,13 +29,13 @@ import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 
 /**
  * Core logic for applying an accumulative/algebraic math function to a
  * bag of doubles.
  */
+@OutputSchema("double")
 public abstract class AlgebraicByteArrayMathBase extends AlgebraicMathBase<Double> implements Accumulator<Double> {
 
     protected static Double getSeed(KNOWN_OP op) {
@@ -172,11 +172,6 @@ public abstract class AlgebraicByteArrayMathBase extends AlgebraicMathBase<Doubl
                 throw new ExecException("Error executing function on Doubles", errCode, PigException.BUG, e);
             }
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.DOUBLE));
     }
 
     /* Accumulator interface implementation*/

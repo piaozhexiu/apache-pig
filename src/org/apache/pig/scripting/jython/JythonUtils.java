@@ -32,7 +32,9 @@ import org.apache.pig.data.TupleFactory;
 import org.python.core.Py;
 import org.python.core.PyBoolean;
 import org.python.core.PyDictionary;
+import org.python.core.PyException;
 import org.python.core.PyFloat;
+import org.python.core.PyFunction;
 import org.python.core.PyInteger;
 import org.python.core.PyList;
 import org.python.core.PyLong;
@@ -152,5 +154,31 @@ public class JythonUtils {
         return new PyTuple(pyTuple);
     }
 
+    /**
+     * Finds a <code>PyObject</code> in the given <code>PyFunction</code> based on the attribute 
+     * name and converts it to an instance of a Java class.
+     * @param <T> type parameter
+     * @param pyFunction function object
+     * @param attributeName name of the PyObject to be returned
+     * @param type the class type to convert the <code>PyObject</code> to.
+     * @return 
+     * Throws {@link RuntimeException} if the conversion fails
+     */
+    public static <T> T asJavaObject(PyFunction pyFunction, String attributeName, Class<T> type) {
+        if (attributeName == null)
+            return null;
+        PyObject pyObject = pyFunction.__findattr__(attributeName.intern());
+        if (pyObject == null)
+            return null;
+        try {
+            return Py.tojava(pyObject, type);
+        }
+        catch (PyException e) {
+            throw new RuntimeException(String.format(
+                    "PyFunction (%s) : cannot convert jython type (%s) to java type: %s",
+                    pyFunction.__name__, pyObject.getClass().getName(), type.getName()), e);
+        }
+    }
+    
 }
 

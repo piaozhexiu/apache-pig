@@ -35,6 +35,8 @@ import org.apache.pig.impl.logicalLayer.FrontendException;
  * Given a single data atom it Returns the closest long to the argument.
  * 
  */
+@OutputSchema("long")
+@Unique
 public class ROUND extends EvalFunc<Long>{
 	/**
 	 * java level API
@@ -58,11 +60,6 @@ public class ROUND extends EvalFunc<Long>{
         }
 	}
 	
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.LONG));
-	}
-
     /* (non-Javadoc)
      * @see org.apache.pig.EvalFunc#getArgToFuncMapping()
      */

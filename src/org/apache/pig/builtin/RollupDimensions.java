@@ -24,12 +24,8 @@ import org.apache.pig.EvalFunc;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.BagFactory;
 import org.apache.pig.data.DataBag;
-import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-import org.apache.pig.impl.logicalLayer.FrontendException;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.impl.logicalLayer.schema.Schema.FieldSchema;
 
 import com.google.common.collect.Lists;
 
@@ -42,6 +38,12 @@ import com.google.common.collect.Lists;
  * { (a, b, c), (a, b, null), (a, null, null), (null, null, null) }
  * </pre>
  */
+//"dimensions" string is the default namespace assigned to the output
+// schema. this can be overridden by specifying user defined schema
+// names in foreach operator. if user defined schema names are not
+// specified then the output schema of foreach operator using this UDF
+// will have "dimensions::" namespace for all fields in the tuple
+@OutputSchema(value = "dimensions:bag", useInputSchema = true)
 public class RollupDimensions extends EvalFunc<DataBag> {
 
     private static BagFactory bf = BagFactory.getInstance();
@@ -71,21 +73,6 @@ public class RollupDimensions extends EvalFunc<DataBag> {
 	for (int i = input.size() - 1; i >= 0; i--) {
 	    tempTup.set(i, allMarker);
 	    result.add(tf.newTuple(tempTup.getAll()));
-	}
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-	// "dimensions" string is the default namespace assigned to the output
-	// schema. this can be overridden by specifying user defined schema
-	// names in foreach operator. if user defined schema names are not
-	// specified then the output schema of foreach operator using this UDF
-	// will have "dimensions::" namespace for all fields in the tuple
-	try {
-	    return new Schema(new FieldSchema("dimensions", input, DataType.BAG));
-	} catch (FrontendException e) {
-	    // we are specifying BAG explicitly, so this should not happen.
-	    throw new RuntimeException(e);
 	}
     }
 }

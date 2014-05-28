@@ -18,26 +18,25 @@
 package org.apache.pig.builtin;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
+import java.util.Iterator;
 
 import org.apache.pig.Accumulator;
 import org.apache.pig.Algebraic;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.PigException;
+import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
-import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.backend.executionengine.ExecException;
 
 
 /**
  * This method should never be used directly, use {@link AVG}.
  */
+@OutputSchema("bigdecimal")
 public class BigIntegerAvg extends EvalFunc<BigDecimal> implements Algebraic, Accumulator<BigDecimal> {
 
     private static TupleFactory mTupleFactory = TupleFactory.getInstance();
@@ -232,11 +231,6 @@ public class BigIntegerAvg extends EvalFunc<BigDecimal> implements Algebraic, Ac
         // Averages will have IEEE 754R Decimal64 format, 16 digits, and a
         // rounding mode of HALF_EVEN, the IEEE 754R default
         return (new BigDecimal(dividend)).divide((new BigDecimal(divisor)), MathContext.DECIMAL128);
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.BIGDECIMAL));
     }
 
     /* Accumulator interface */

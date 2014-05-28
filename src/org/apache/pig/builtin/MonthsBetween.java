@@ -73,6 +73,8 @@ import org.joda.time.Months;
  *
  * </pre>
  */
+@OutputSchema("long")
+@Unique
 public class MonthsBetween extends EvalFunc<Long> {
 
     @Override
@@ -91,11 +93,6 @@ public class MonthsBetween extends EvalFunc<Long> {
         return (long) m.getMonths();
 
     }
-
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.LONG));
-	}
 
     @Override
     public List<FuncSpec> getArgToFuncMapping() throws FrontendException {

@@ -21,9 +21,9 @@ package org.apache.pig.piggybank.evaluation.math;
 import java.io.IOException;
 
 import org.apache.pig.EvalFunc;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.data.DataType;
 
 /**
  * math.NEXTUP implements a binding to the Java function
@@ -54,6 +54,8 @@ import org.apache.pig.data.DataType;
 * @author ajay garg
 *
 */
+@OutputSchema("double")
+@Unique
 public class DoubleNextup extends EvalFunc<Double>{
     /**
      * java level API
@@ -72,9 +74,4 @@ public class DoubleNextup extends EvalFunc<Double>{
 
 		return Math.nextUp(d);
     } 
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.DOUBLE));
-    }
 }

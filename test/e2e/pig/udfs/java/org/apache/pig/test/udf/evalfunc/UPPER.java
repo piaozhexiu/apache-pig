@@ -19,11 +19,14 @@
 package org.apache.pig.test.udf.evalfunc;
 
 import java.io.IOException;
-import org.apache.pig.EvalFunc;
-import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.data.DataType;
 
+import org.apache.pig.EvalFunc;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
+import org.apache.pig.data.Tuple;
+
+@OutputSchema("swap:bag")
+@Unique
 public class UPPER extends EvalFunc<String>
 {
 	//@Override
@@ -41,10 +44,5 @@ public class UPPER extends EvalFunc<String>
 		}
 
 		return output;
-        }
-
-	@Override
-        public Schema outputSchema(Schema input) {
-                return new Schema(new Schema.FieldSchema(getSchemaName("swap", input), DataType.BAG));
         }
 }

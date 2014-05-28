@@ -23,6 +23,8 @@ import java.util.List;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.FuncSpec;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
@@ -34,18 +36,11 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
 * <dd><code>long HashFNV(String string_to_hash, [int mod])</code>.</dd>
 * </dl>
 */
-
+@OutputSchema("long")
+@Unique
 public class HashFNV extends EvalFunc<Long> {
     static final int FNV1_32_INIT = 33554467;
     static final int FNV_32_PRIME = 0x01000193;
-    public Schema outputSchema(Schema input) {
-        try {
-            return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.LONG));
-        } catch (Exception e) {
-          return null;
-        }
-    }
-
 
     long hashFnv32Init(int init, String s)
     {

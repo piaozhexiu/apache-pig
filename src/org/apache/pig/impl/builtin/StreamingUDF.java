@@ -38,6 +38,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.ExecType;
 import org.apache.pig.ExecTypeProvider;
+import org.apache.pig.OutputSchemaResolver;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.backend.hadoop.executionengine.Launcher;
 import org.apache.pig.data.Tuple;
@@ -55,7 +56,6 @@ import org.apache.pig.impl.streaming.StreamingUDFOutputHandler;
 import org.apache.pig.impl.streaming.StreamingUDFOutputSchemaException;
 import org.apache.pig.impl.streaming.StreamingUtil;
 import org.apache.pig.impl.util.UDFContext;
-import org.apache.pig.impl.util.Utils;
 import org.apache.pig.parser.ParserException;
 import org.apache.pig.scripting.ScriptingOutputCapturer;
 
@@ -83,6 +83,9 @@ public class StreamingUDF extends EvalFunc<Object> {
     private String filePath;
     private String funcName;
     private Schema schema;
+    private String outputSchemaString;
+    private boolean useInputSchema;
+    private String[] uniqueFields;
     private ExecType execType;
     private String isIllustrate;
     
@@ -113,14 +116,23 @@ public class StreamingUDF extends EvalFunc<Object> {
 
     public StreamingUDF(String language, 
                         String filePath, String funcName, 
-                        String outputSchemaString, String schemaLineNumber,
-                        String execType, String isIllustrate)
+                        String outputSchemaString, String useInputSchema, String uniqueFields,
+                        String schemaLineNumber, String execType, String isIllustrate)
                                 throws StreamingUDFOutputSchemaException, ExecException {
         this.language = language;
         this.filePath = filePath;
         this.funcName = funcName;
+        this.outputSchemaString = outputSchemaString;
         try {
-            this.schema = Utils.getSchemaFromString(outputSchemaString);
+            this.useInputSchema = (useInputSchema == null) ? false : Boolean.valueOf(useInputSchema);
+            if (uniqueFields != null)
+                this.uniqueFields = uniqueFields.isEmpty() ? new String[0] : uniqueFields.split(",");
+            //if schema is not static, will be resolved in outputschema() 
+            if (!(this.useInputSchema || this.uniqueFields != null)) {
+                OutputSchemaResolver schemaResolver = new OutputSchemaResolver(funcName,
+                        outputSchemaString, null);
+                this.schema = schemaResolver.resolveSchema();
+            }
             //ExecTypeProvider.fromString doesn't seem to load the ExecTypes in 
             //mapreduce mode so we'll try to figure out the exec type ourselves.
             if (execType.equals("local")) {
@@ -154,6 +166,7 @@ public class StreamingUDF extends EvalFunc<Object> {
         inputQueue = new ArrayBlockingQueue<Tuple>(1);
         outputQueue = new ArrayBlockingQueue<Object>(2);
         soc = new ScriptingOutputCapturer(execType);
+        initOutputSchema(getInputSchema());
         startUdfController();
         createInputHandlers();
         setStreams();
@@ -352,7 +365,25 @@ public class StreamingUDF extends EvalFunc<Object> {
 
     @Override
     public Schema outputSchema(Schema input) {
-        return this.schema;
+        if (schema != null)
+            return schema;
+        // outputschema has unique fields or depends on the input schema
+        if (useInputSchema || uniqueFields != null) {
+            initOutputSchema(input);
+        }
+        return schema;
+    }
+    
+    private void initOutputSchema(Schema input) {
+        try {
+            OutputSchemaResolver schemaResolver = new OutputSchemaResolver(input, funcName,
+                    outputSchemaString, uniqueFields, useInputSchema, nextSchemaId);
+            schema = schemaResolver.resolveSchema();
+            nextSchemaId = schemaResolver.getUpdatedNextSchemaId();
+        }
+        catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

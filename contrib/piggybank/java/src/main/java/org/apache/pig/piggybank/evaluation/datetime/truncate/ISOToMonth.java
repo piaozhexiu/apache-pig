@@ -19,6 +19,8 @@ package org.apache.pig.piggybank.evaluation.datetime.truncate;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.FuncSpec;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
@@ -80,7 +82,8 @@ import java.util.List;
  * (2007-01-01T00:00:00.000Z,2007-03-01T00:00:00.000Z,2007-03-05T00:00:00.000Z,2007-03-05T00:00:00.000Z,2007-03-05T03:00:00.000Z,2007-03-05T03:05:00.000Z,2007-03-05T03:05:03.000Z)
  * </pre>
  */
-
+@OutputSchema("chararray")
+@Unique
 public class ISOToMonth extends EvalFunc<String> {
 
     @Override
@@ -95,11 +98,6 @@ public class ISOToMonth extends EvalFunc<String> {
         DateTime result = dt.dayOfMonth().setCopy(1).hourOfDay().setCopy(0).minuteOfHour().setCopy(0).secondOfMinute().setCopy(0).millisOfSecond().setCopy(0);
 
         return result.toString();
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.CHARARRAY));
     }
 
     @Override

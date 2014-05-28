@@ -36,12 +36,12 @@ import org.apache.pig.backend.hadoop.executionengine.physicalLayer.PhysicalOpera
 import org.apache.pig.backend.hadoop.executionengine.physicalLayer.Result;
 import org.apache.pig.backend.hadoop.executionengine.physicalLayer.expressionOperators.POUserComparisonFunc;
 import org.apache.pig.backend.hadoop.executionengine.physicalLayer.expressionOperators.POUserFunc;
+import org.apache.pig.builtin.OutputSchema;
 import org.apache.pig.data.BagFactory;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.plan.OperatorKey;
 import org.apache.pig.test.utils.GenRandomData;
 import org.junit.Test;
@@ -50,6 +50,7 @@ public class TestPOUserFunc {
 	Random r = new Random(42L);
 	int MAX_TUPLES = 10;
 
+	@OutputSchema("int")
 	public static class ARITY extends EvalFunc<Integer> {
 
 		@Override
@@ -61,11 +62,6 @@ public class TestPOUserFunc {
                 e.printStackTrace();
             }
             return 0;
-		}
-
-		@Override
-		public Schema outputSchema(Schema input) {
-            return new Schema(new Schema.FieldSchema(null, DataType.INTEGER));
 		}
 	}
 
@@ -99,6 +95,7 @@ public class TestPOUserFunc {
 	 * class is Algebraic in implemenation, so if possible the execution will be
 	 * split into a local and global application
 	 */
+	@OutputSchema("double")
 	public static class AVG extends EvalFunc<Double> implements Algebraic {
 
 		private static TupleFactory mTupleFactory = TupleFactory.getInstance();
@@ -223,12 +220,6 @@ public class TestPOUserFunc {
 
 			return sum;
 		}
-
-		@Override
-		public Schema outputSchema(Schema input) {
-            return new Schema(new Schema.FieldSchema(null, DataType.DOUBLE));
-		}
-
 	}
 
 	@Test

@@ -41,6 +41,7 @@ import org.apache.pig.impl.logicalLayer.FrontendException;
  * Third argument is the index of the last character of substring.<br>
  * if the last argument is past the end of the string, substring of (beginIndex, length(str)) is returned.
  */
+@OutputSchema("chararray")
 public class SUBSTRING extends EvalFunc<String> {
 
     /**
@@ -69,11 +70,6 @@ public class SUBSTRING extends EvalFunc<String> {
             warn(e.toString(), PigWarning.UDF_WARNING_4);
             return null;
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.CHARARRAY));
     }
 
     /* (non-Javadoc)

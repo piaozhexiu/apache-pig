@@ -24,7 +24,6 @@ import groovy.util.ScriptException;
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -32,7 +31,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.pig.EvalFunc;
+import org.apache.pig.OutputSchemaResolver;
 import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
@@ -52,6 +53,10 @@ public class GroovyEvalFunc<T> extends EvalFunc<T> {
 
   private Object invocationTarget;
 
+  private OutputSchema outputSchema = null;
+  
+  private Unique unique = null;
+  
   public GroovyEvalFunc() {
   }
 
@@ -106,11 +111,25 @@ public class GroovyEvalFunc<T> extends EvalFunc<T> {
         this.schemaFunction = new GroovyEvalFuncObject(path, namespace, ((OutputSchemaFunction) annotation).value());
         break;
       } else if (annotation.annotationType().equals(OutputSchema.class)) {
-        this.schema = Utils.getSchemaFromString(((OutputSchema) annotation).value());
-        break;
+          this.outputSchema = (OutputSchema) annotation;
+          if (unique != null)
+              break;
+      } else if (annotation.annotationType().equals(Unique.class)) {
+          this.unique = (Unique) annotation;
+          if (outputSchema != null)
+              break;
       }
     }
-
+    
+    if (schemaFunction == null && outputSchema != null) {
+        //if schema is static, parse it here, otherwise, resolve it in outputschema()
+        if (!outputSchema.useInputSchema() && (unique == null || unique.value() == null)) {
+            OutputSchemaResolver schemaResolver = 
+                new OutputSchemaResolver(methodName, outputSchema.value(), null);
+            this.schema = schemaResolver.resolveSchema();
+        }
+    }
+    
     //
     // For static method, invocation target is null, for non
     // static method, create/set invocation target unless passed
@@ -172,8 +191,22 @@ public class GroovyEvalFunc<T> extends EvalFunc<T> {
       } catch (IOException ioe) {
         throw new RuntimeException(ioe);
       }
-    } else {
-      return this.schema;
+    } else if (null != this.schema){
+        return this.schema;
+    } else if (outputSchema != null){
+        OutputSchemaResolver schemaResolver = new OutputSchemaResolver(input, method.getName(),
+          outputSchema.value(), ((unique == null) ? null : unique.value()),
+          outputSchema.useInputSchema(), nextSchemaId);
+        try {
+          Schema result = schemaResolver.resolveSchema();
+          nextSchemaId = schemaResolver.getUpdatedNextSchemaId();
+          return result;
+        } catch (ParserException e) {
+          throw new RuntimeException(e);
+        }
+    }
+    else {
+        return null;
     }
   }
 

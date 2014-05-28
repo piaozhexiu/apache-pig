@@ -39,6 +39,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  * the number of keyvalue pairs.  For all other types the value of 1 is
  * always returned.
  */
+@OutputSchema("long")
 public class SIZE extends EvalFunc<Long> {
 
     @Override
@@ -53,11 +54,6 @@ public class SIZE extends EvalFunc<Long> {
             String msg = "Error while computing size in " + this.getClass().getSimpleName();
             throw new ExecException(msg, errCode, PigException.BUG, e);           
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.LONG)); 
     }
 
     /* (non-Javadoc)

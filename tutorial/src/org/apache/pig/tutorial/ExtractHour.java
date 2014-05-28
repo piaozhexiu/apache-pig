@@ -23,6 +23,8 @@ import java.util.ArrayList;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.FuncSpec;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.DataType;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
@@ -32,6 +34,8 @@ import org.apache.pig.impl.logicalLayer.FrontendException;
  * The excite query log timestamp format is YYMMDDHHMMSS
  * This function extracts the hour, HH
  */
+@OutputSchema("chararray")
+@Unique
 public class ExtractHour extends EvalFunc<String> {
     public String exec(Tuple input) throws IOException {
         if (input == null || input.size() == 0)
@@ -43,16 +47,6 @@ public class ExtractHour extends EvalFunc<String> {
             System.err.println("ExtractHour: failed to proces input; error - " + e.getMessage());
             return null;
         }
-    }
-
-    @Override
-    /**
-     * This method gives a name to the column.
-     * @param input - schema of the input data
-     * @return schema of the ouput data
-     */
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.CHARARRAY));
     }
 
     /* (non-Javadoc)

@@ -23,14 +23,14 @@ import java.util.Random;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.data.DataType;
 
 /**
  * Return a random double value.  Whatever arguments are passed to this UDF
  * are ignored.
  */
 @Nondeterministic
+@OutputSchema("double")
+@Unique
 public class RANDOM extends EvalFunc<Double>{
     private Random r;
 
@@ -46,9 +46,4 @@ public class RANDOM extends EvalFunc<Double>{
 	public Double exec(Tuple input) throws IOException {
 		return r.nextDouble();
 	}
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.DOUBLE));
-    }
 }

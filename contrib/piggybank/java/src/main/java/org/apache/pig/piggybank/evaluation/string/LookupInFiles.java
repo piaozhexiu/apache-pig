@@ -18,7 +18,6 @@
 package org.apache.pig.piggybank.evaluation.string;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -30,10 +29,10 @@ import java.util.Properties;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.backend.hadoop.datastorage.ConfigurationUtil;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigMapReduce;
-import org.apache.pig.data.DataType;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.io.FileLocalizer;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 /**
 * <dl>
@@ -45,22 +44,14 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
 * <dd><code>if any file contains expression, return 1, otherwise, 0</code>.</dd>
 * </dl>
 */
-
+@OutputSchema("int")
+@Unique
 public class LookupInFiles extends EvalFunc<Integer> {
     boolean initialized = false;
     ArrayList<String> mFiles = new ArrayList<String>();
     Map<String, Boolean> mKeys = new HashMap<String, Boolean>();
     static Map<ArrayList<String>, Map<String, Boolean>> mTables = new HashMap<ArrayList<String>, Map<String, Boolean>>(); 
 
-    @Override
-    public Schema outputSchema(Schema input) {
-      try {
-          return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.INTEGER));
-      } catch (Exception e) {
-        return null;
-      }
-    }
-    
     public void init(Tuple tuple) throws IOException {
         for (int count = 1; count < tuple.size(); count++) {
             if (!(tuple.get(count) instanceof String)) {

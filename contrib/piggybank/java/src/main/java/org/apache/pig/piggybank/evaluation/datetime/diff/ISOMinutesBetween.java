@@ -17,17 +17,21 @@
  */
 package org.apache.pig.piggybank.evaluation.datetime.diff;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.pig.EvalFunc;
 import org.apache.pig.FuncSpec;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.joda.time.*;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.Minutes;
 
 /**
  * <p>ISOMinutesBetween returns the number of minutes between two ISO8601 datetimes as a Long</p>
@@ -79,7 +83,8 @@ import java.util.List;
  * (0L,-10L,-332,-7988L,-479334L,-28760097L)
  * </pre>
  */
-
+@OutputSchema("long")
+@Unique
 public class ISOMinutesBetween extends EvalFunc<Long> {
 
     @Override
@@ -101,11 +106,6 @@ public class ISOMinutesBetween extends EvalFunc<Long> {
 
         return minutes;
     }
-
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.LONG));
-	}
 
     @Override
     public List<FuncSpec> getArgToFuncMapping() throws FrontendException {

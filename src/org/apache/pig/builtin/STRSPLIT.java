@@ -42,7 +42,11 @@ import org.apache.pig.impl.logicalLayer.FrontendException;
  * the optional third column may provide a limit to the number of results.<br>
  * If limit is not provided, 0 is assumed, as per Java's split().
  */
-
+/*
+ * The outputSchema of STRSPLIT cannot be set as DataType.chararry otherwise in some cases,
+ * it will cause error. For example, when stringsize() is called.
+*/
+@OutputSchema("tuple")
 public class STRSPLIT extends EvalFunc<Tuple> {
 
     private final static TupleFactory tupleFactory = TupleFactory.getInstance();
@@ -76,15 +80,6 @@ public class STRSPLIT extends EvalFunc<Tuple> {
         }
         // this only happens if the try block did not complete normally
         return null;
-    }
-    
-    /*
-     * The outputSchema of STRSPLIT cannot be set as DataType.chararry otherwise in some cases,
-     * it will cause error. For example, when stringsize() is called.
-    */
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.TUPLE)); 
     }
     
     /* (non-Javadoc)

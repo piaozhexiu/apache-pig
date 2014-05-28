@@ -19,19 +19,11 @@
 package org.apache.pig.scripting.jruby;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.impl.util.Utils;
-import org.apache.pig.parser.ParserException;
-import org.apache.pig.backend.executionengine.ExecException;
-
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -131,7 +123,10 @@ public class JrubyEvalFunc extends EvalFunc<Object> {
     public Schema outputSchema(Schema input) {
         if (!isInitialized)
             initialize();
+        RubySchema.setNextSchemaId(nextSchemaId);
         RubySchema rs = PigJrubyLibrary.pigToRuby(ruby, input);
-        return PigJrubyLibrary.rubyToPig(rubyEngine.callMethod(funcInfoEncapsulator, "schema", new Object[]{rs, funcReceiver}, RubySchema.class));
+        Schema result = PigJrubyLibrary.rubyToPig(rubyEngine.callMethod(funcInfoEncapsulator, "schema", new Object[]{rs, funcReceiver}, RubySchema.class));
+        nextSchemaId = RubySchema.getNextSchemaId();
+        return result;
     }
 }

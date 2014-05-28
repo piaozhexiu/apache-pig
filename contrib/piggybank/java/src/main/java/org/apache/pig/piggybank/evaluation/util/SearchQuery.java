@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.FuncSpec;
 import org.apache.pig.backend.executionengine.ExecException;
+import org.apache.pig.builtin.OutputSchema;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
@@ -39,6 +40,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  * is normalized, converting it to lower-case, removing punctuations, removing
  * extra spaces.
  */
+@OutputSchema("query:chararray")
 public class SearchQuery extends EvalFunc<String> {
   private static Pattern queryPattern = Pattern
       .compile("(?<=([\\&\\?](as_)?[pq]=)).*?(\\z|(?=[\\&\\\"]))");
@@ -85,15 +87,5 @@ public class SearchQuery extends EvalFunc<String> {
       List<FuncSpec> funcList = new ArrayList<FuncSpec>();
       funcList.add(new FuncSpec(this.getClass().getName(), new Schema(new Schema.FieldSchema(null, DataType.CHARARRAY))));
       return funcList;
-  }
-  @Override
-  public Schema outputSchema(Schema input) {
-    try {
-      Schema s = new Schema();
-      s.add(new Schema.FieldSchema("query", DataType.CHARARRAY));
-      return s;
-    } catch (Exception e) {
-      return null;
-    }
   }
 }

@@ -22,14 +22,14 @@ import java.io.IOException;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.data.DataType;
 /**
   * ABS implements a binding to the Java function
  * {@link java.lang.Math#abs(double) Math.abs(int)} for computing the
  * absolute value of the argument. The returned value will be an int which is 
  * absolute value of the input.
  */
+@OutputSchema("int")
+@Unique
 public class IntAbs extends EvalFunc<Integer>{
 	/**
 	 * java level API
@@ -48,10 +48,5 @@ public class IntAbs extends EvalFunc<Integer>{
         }
 
 		return Math.abs(d);
-	}
-	
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.INTEGER));
 	}
 }

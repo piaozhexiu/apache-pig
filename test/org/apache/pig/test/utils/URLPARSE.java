@@ -19,14 +19,16 @@
 package org.apache.pig.test.utils;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.pig.EvalFunc;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.data.DataType;
 
+@OutputSchema("urlparse:map")
+@Unique
 public class URLPARSE extends EvalFunc<Map<String, Object> > {
 
     public Map<String, Object> exec(Tuple input) throws IOException {
@@ -52,11 +54,6 @@ public class URLPARSE extends EvalFunc<Map<String, Object> > {
         output.put("name",      s[1]);
 
         return output;
-    }
-    
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName("urlparse", input), DataType.MAP));
     }
 }
 

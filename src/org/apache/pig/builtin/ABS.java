@@ -35,6 +35,8 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  * absolute value of the argument. The returned value will be a double which is
  * absolute value of the input.
  */
+@OutputSchema("double")
+@Unique
 public class ABS extends EvalFunc<Double>{
 	/**
 	 * java level API
@@ -56,11 +58,6 @@ public class ABS extends EvalFunc<Double>{
         }
 
 		return Math.abs(d);
-	}
-
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.DOUBLE));
 	}
 
     /* (non-Javadoc)

@@ -20,14 +20,11 @@ package org.apache.pig.builtin;
 
 import java.io.IOException;
 
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.PigWarning;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.data.DataType;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 
 /**
@@ -36,6 +33,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  *      A = load 'mydata' as (name);
  *      B = foreach A generate INDEXOF(name, ",");
  */
+@OutputSchema("int")
 public class INDEXOF extends EvalFunc<Integer> {
 
     private static final Log log = LogFactory.getLog(INDEXOF.class);
@@ -65,11 +63,6 @@ public class INDEXOF extends EvalFunc<Integer> {
             warn("Failed to process input; error - " + e.getMessage(), PigWarning.UDF_WARNING_1);
             return null;
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.INTEGER));
     }
 
 }

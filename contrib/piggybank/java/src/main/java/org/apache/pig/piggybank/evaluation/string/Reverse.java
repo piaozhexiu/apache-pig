@@ -22,13 +22,13 @@ import java.io.IOException;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.PigWarning;
 import org.apache.pig.backend.executionengine.ExecException;
-import org.apache.pig.data.DataType;
+import org.apache.pig.builtin.OutputSchema;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 /*
  * reverses a string.
  */
+@OutputSchema("chararray")
 public class Reverse extends EvalFunc<String> {
     @Override
     public String exec(Tuple input) throws IOException {
@@ -51,10 +51,5 @@ public class Reverse extends EvalFunc<String> {
             warn("Error reading input: " + e.getMessage(), PigWarning.UDF_WARNING_1);
             return null;
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.CHARARRAY));
     }
 }

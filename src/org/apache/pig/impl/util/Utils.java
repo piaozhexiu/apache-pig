@@ -48,6 +48,7 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.pig.FileInputLoadFunc;
 import org.apache.pig.FuncSpec;
 import org.apache.pig.LoadFunc;
+import org.apache.pig.OutputSchemaResolver;
 import org.apache.pig.PigConfiguration;
 import org.apache.pig.PigException;
 import org.apache.pig.ResourceSchema;
@@ -193,7 +194,20 @@ public class Utils {
      * @throws ParserException
      */
     public static Schema getSchemaFromString(String schemaString) throws ParserException {
-        LogicalSchema schema = parseSchema(schemaString);
+        return getSchemaFromString(schemaString, true, true);
+    }
+    
+    /**
+     * @param schemaString a String representation of the Schema <b>without</b>
+     *                     any enclosing curly-braces.<b>Not</b> for use with
+     *                     <code>Schema#toString</code>
+     * @validateSchemaAlias - if set, schema is checked for duplicate aliases
+     * @generateFieldName - if false, aliases of unnamed fields are assigned by {@link OutputSchemaResolver} 
+     * @return Schema instance
+     * @throws ParserException
+     */
+    public static Schema getSchemaFromString(String schemaString, boolean validateSchemaAlias, boolean generateFieldName) throws ParserException {
+        LogicalSchema schema = parseSchema(schemaString, validateSchemaAlias, generateFieldName);
         Schema result = org.apache.pig.newplan.logical.Util.translateSchema(schema);
         Schema.setSchemaDefaultType(result, DataType.BYTEARRAY);
         return result;
@@ -217,9 +231,14 @@ public class Utils {
     }
 
     public static LogicalSchema parseSchema(String schemaString) throws ParserException {
-        QueryParserDriver queryParser = new QueryParserDriver( new PigContext(), 
-                "util", new HashMap<String, String>() ) ;
-        LogicalSchema schema = queryParser.parseSchema(schemaString);
+        return parseSchema(schemaString, true, true);
+    }
+
+    public static LogicalSchema parseSchema(String schemaString, boolean validateSchemaAlias, boolean generateFieldName)
+            throws ParserException {
+        QueryParserDriver queryParser = new QueryParserDriver(new PigContext(), "util",
+                new HashMap<String, String>());
+        LogicalSchema schema = queryParser.parseSchema(schemaString, validateSchemaAlias, generateFieldName);
         return schema;
     }
 

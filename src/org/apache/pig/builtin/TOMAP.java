@@ -18,19 +18,18 @@
 package org.apache.pig.builtin;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.pig.EvalFunc;
-import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 /**
  * This class makes a map out of the parameters passed to it
  * T = foreach U generate TOMAP($0, $1, $2, $3);
  * It generates a map $0->1, $2->$3
  */
+@OutputSchema("map")
 public class TOMAP extends EvalFunc<Map> {
 
     @Override
@@ -55,10 +54,4 @@ public class TOMAP extends EvalFunc<Map> {
             throw new RuntimeException("Error while creating a map", e);
         }
     }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.MAP));
-    }
-
 }

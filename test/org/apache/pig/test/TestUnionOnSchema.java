@@ -31,6 +31,8 @@ import org.apache.pig.EvalFunc;
 import org.apache.pig.ExecType;
 import org.apache.pig.PigException;
 import org.apache.pig.PigServer;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
@@ -804,17 +806,11 @@ public class TestUnionOnSchema  {
     /**
      * Udf that has schema of tuple column with no inner schema 
      */
+    @OutputSchema("UDFTupleNullSchema:tuple")
+    @Unique
     public static class UDFTupleNullSchema extends EvalFunc <Tuple> {
         public Tuple exec(Tuple input) {
             return input;
-        }
-        
-        @Override
-        public Schema outputSchema(Schema input) {
-            FieldSchema fs =
-                new Schema.FieldSchema(getSchemaName("UDFTupleNullSchema", input),
-                        DataType.TUPLE);
-                return new Schema(fs);
         }
 
     }

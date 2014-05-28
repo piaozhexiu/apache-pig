@@ -72,6 +72,8 @@ import org.joda.time.DateTime;
  *
  * </pre>
  */
+@OutputSchema("long")
+@Unique
 public class MilliSecondsBetween extends EvalFunc<Long> {
 
     @Override
@@ -87,11 +89,6 @@ public class MilliSecondsBetween extends EvalFunc<Long> {
         // Larger date first
         // Subtraction may overflow
         return startDate.getMillis() - endDate.getMillis();
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.LONG));
     }
 
     @Override

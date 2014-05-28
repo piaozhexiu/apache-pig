@@ -24,16 +24,15 @@ import org.apache.pig.Accumulator;
 import org.apache.pig.PigException;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
-import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 
 /**
  * Core logic for applying an accumulative/algebraic math function to a
  * bag of Floats.
  */
+@OutputSchema("float")
 public abstract class AlgebraicFloatMathBase extends AlgebraicMathBase<Float> implements Accumulator<Float> {
 
     protected static Float getSeed(KNOWN_OP op) {
@@ -124,11 +123,6 @@ public abstract class AlgebraicFloatMathBase extends AlgebraicMathBase<Float> im
                 throw new ExecException("Error executing function on Floats", errCode, PigException.BUG, e);
             }
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.FLOAT));
     }
 
     /* Accumulator interface implementation*/

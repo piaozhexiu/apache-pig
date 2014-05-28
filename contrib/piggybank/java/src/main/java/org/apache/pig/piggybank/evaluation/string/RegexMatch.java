@@ -24,7 +24,8 @@ import java.util.regex.Pattern;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.FuncSpec;
-import org.apache.pig.PigWarning;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
@@ -38,18 +39,11 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
 * <dd><code>return 1 if expression contains regex, 0 otherwise</code>.</dd>
 * </dl>
 */
-
+@OutputSchema("int")
+@Unique
 public class RegexMatch extends EvalFunc<Integer> {
     String mExpression = null;
     Pattern mPattern = null; 
-    @Override
-    public Schema outputSchema(Schema input) {
-      try {
-          return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.INTEGER));
-      } catch (Exception e) {
-        return null;
-      }
-    }
     
     public Integer exec(Tuple input) throws IOException {
         if (input.size()!=2) {

@@ -28,6 +28,8 @@ import java.util.List;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.FuncSpec;
 import org.apache.pig.PigWarning;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
@@ -43,19 +45,11 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
 * <dd><code>(date1-date2) in days, can be negative</code>.</dd>
 * </dl>
 */
-
+@OutputSchema("int")
+@Unique
 public class DiffDate extends EvalFunc<Integer> {
     static DateFormat df = new SimpleDateFormat("yyyyMMdd");
-    @Override
-    public Schema outputSchema(Schema input) {
-        try {
-            return new Schema(new Schema.FieldSchema(getSchemaName(this
-                    .getClass().getName().toLowerCase(), input),
-                    DataType.INTEGER));
-        } catch (Exception e) {
-            return null;
-        }
-    }
+
     @Override
     public Integer exec(Tuple input) throws IOException {
         if (input.size()!=2) {

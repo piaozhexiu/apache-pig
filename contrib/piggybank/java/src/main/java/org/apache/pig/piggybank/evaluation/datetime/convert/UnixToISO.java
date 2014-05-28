@@ -19,6 +19,8 @@ package org.apache.pig.piggybank.evaluation.datetime.convert;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.FuncSpec;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
@@ -71,7 +73,8 @@ import java.util.List;
  * ...
  * </pre>
  */
-
+@OutputSchema("chararray")
+@Unique
 public class UnixToISO extends EvalFunc<String> {
 
     @Override
@@ -88,11 +91,6 @@ public class UnixToISO extends EvalFunc<String> {
 
         return result.toString();
     }
-
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.CHARARRAY));
-	}
 
     @Override
     public List<FuncSpec> getArgToFuncMapping() throws FrontendException {

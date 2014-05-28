@@ -72,6 +72,8 @@ import java.util.List;
  *
  * </pre>
  */
+@OutputSchema("long")
+@Unique
 public class HoursBetween extends EvalFunc<Long> {
 
     @Override
@@ -88,11 +90,6 @@ public class HoursBetween extends EvalFunc<Long> {
         return (startDate.getMillis() - endDate.getMillis()) / 3600000L;
 
     }
-
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.LONG));
-	}
 
     @Override
     public List<FuncSpec> getArgToFuncMapping() throws FrontendException {

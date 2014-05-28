@@ -20,14 +20,17 @@ package org.apache.pig.test.udf.evalfunc;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
+
 import org.apache.pig.EvalFunc;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DefaultBagFactory;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.DefaultTupleFactory;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.data.DataType;
 
+@OutputSchema("swap:bag")
+@Unique
 public class TestEvalFunc extends EvalFunc<DataBag>
 {
 	//@Override
@@ -53,10 +56,5 @@ public class TestEvalFunc extends EvalFunc<DataBag>
 		}
 
 		return output;
-        }
-
-        @Override
-        public Schema outputSchema(Schema input) {
-                return new Schema(new Schema.FieldSchema(getSchemaName("swap", input), DataType.BAG));
         }
 }

@@ -19,15 +19,10 @@
 package org.apache.pig.builtin;
 
 import org.apache.pig.EvalFunc;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.data.DataType;
 
 /**
  * base class for math udfs
  */
-public abstract class Base extends EvalFunc<Double>{
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.DOUBLE));
-	}
-}
+@OutputSchema("double")
+@Unique
+public abstract class Base extends EvalFunc<Double>{ }

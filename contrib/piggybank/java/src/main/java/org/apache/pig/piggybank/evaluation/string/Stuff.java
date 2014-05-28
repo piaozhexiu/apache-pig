@@ -21,9 +21,8 @@ import java.io.IOException;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.PigWarning;
-import org.apache.pig.data.DataType;
+import org.apache.pig.builtin.OutputSchema;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 /**
  * Given a string, this UDF replaces a substring given its starting index and
@@ -34,7 +33,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  * If $0 is "Chocolate Cake" then the UDF will return "Chocolate Pie"
  * 
  **/
-
+@OutputSchema("chararray")
 public class Stuff extends EvalFunc<String> {
 
 	public String exec(Tuple input) throws IOException {
@@ -103,15 +102,5 @@ public class Stuff extends EvalFunc<String> {
 		}
 
 		return result.toString();
-	}
-
-	/**
-	 * @param input
-	 *            , schema of the input data
-	 * @return output schema
-	 */
-	@Override
-	public Schema outputSchema(Schema input) {
-		return new Schema(new Schema.FieldSchema(null, DataType.CHARARRAY));
 	}
 }

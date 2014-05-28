@@ -28,7 +28,6 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.joda.time.DateTime;
-import org.joda.time.Weeks;
 
 /**
  * <p>WeeksBetween returns the number of weeks between two DateTime objects</p>
@@ -73,6 +72,8 @@ import org.joda.time.Weeks;
  *
  * </pre>
  */
+@OutputSchema("long")
+@Unique
 public class WeeksBetween extends EvalFunc<Long> {
 
     @Override
@@ -89,11 +90,6 @@ public class WeeksBetween extends EvalFunc<Long> {
         // Subtraction may overflow
         return (startDate.getMillis() - endDate.getMillis()) / 604800000L;
 
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.LONG));
     }
 
     @Override

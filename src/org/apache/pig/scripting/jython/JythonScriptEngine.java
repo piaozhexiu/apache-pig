@@ -36,11 +36,11 @@ import java.util.regex.Pattern;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.pig.FuncSpec;
+import org.apache.pig.OutputSchemaResolver;
 import org.apache.pig.PigServer;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.impl.PigContext;
 import org.apache.pig.impl.util.ObjectSerializer;
-import org.apache.pig.impl.util.Utils;
 import org.apache.pig.parser.ParserException;
 import org.apache.pig.scripting.ScriptEngine;
 import org.apache.pig.tools.pigstats.PigStats;
@@ -126,23 +126,43 @@ public class JythonScriptEngine extends ScriptEngine {
          * ensure the decorator functions are defined in the interpreter, and
          * manage the module import dependencies.
          * @param path       location of a file to exec in the interpreter
-         * @param pigContext if non-null, module import state is tracked
+         * @param pigConte/trxt if non-null, module import state is tracked
          * @throws IOException
          */
         static synchronized void init(String path, PigContext pigContext) throws IOException {
             // Decorators -
             // "schemaFunction"
             // "outputSchema"
+            // "unique"
             // "outputSchemaFunction"
 
             if (!filesLoaded.contains(path)) {
-                // attempt addition of schema decorator handler, fail silently
-                interpreter.exec("def outputSchema(schema_def):\n"
+                
+                interpreter.exec("def outputSchema(value=None, useInputSchema=False):\n"
                         + "    def decorator(func):\n"
-                        + "        func.outputSchema = schema_def\n"
+                        + "        if value is None:\n"
+                        + "            raise KeyError(\"Value is missing. Unable to get schema definition!\")\n"
+                        + "        func.outputSchema = value\n"
+                        + "        func.useInputSchema = useInputSchema\n"
                         + "        return func\n"
-                        + "    return decorator\n\n");
+                        + "    return decorator\n");
 
+                interpreter.exec("import functools\n" 
+                        + "def unique(value=None):\n"
+                        + "    func = None\n"
+                        + "    if hasattr(value, '__call__'):\n"           
+                        + "        func = value\n"
+                        + "        value = []\n"
+                        + "    elif value is None:\n"
+                        + "        value = []\n"
+                        + "    def decorator(func):\n"
+                        + "        func.fields = value\n"
+                        + "        @functools.wraps(func)\n"
+                        + "        def wrapper(*args, **kwargs):\n"
+                        + "            return func(*args, **kwargs)\n"
+                        + "        return wrapper\n"
+                        + "    return decorator(func) if func else decorator\n");               
+                
                 interpreter.exec("def outputSchemaFunction(schema_def):\n"
                         + "    def decorator(func):\n"
                         + "        func.outputSchemaFunction = schema_def\n"
@@ -355,11 +375,16 @@ public class JythonScriptEngine extends ScriptEngine {
                 if (!key.startsWith("__") && !key.equals("schemaFunction")
                         && !key.equals("outputSchema")
                         && !key.equals("outputSchemaFunction")
+                        && !key.equals("unique")
                         && (value instanceof PyFunction)
                         && (((PyFunction)value).__findattr__("schemaFunction")== null)) {
                     PyObject obj = ((PyFunction)value).__findattr__("outputSchema");
                     if(obj != null) {
-                        Utils.getSchemaFromString(obj.toString());
+                        String[] uniqueFields = JythonUtils.asJavaObject((PyFunction) value,
+                                "fields", String[].class);
+                        OutputSchemaResolver schemaResolver = new OutputSchemaResolver(key,
+                                obj.toString(), uniqueFields);
+                        schemaResolver.resolveSchema();
                     }
                     funcspec = new FuncSpec(JythonFunction.class.getCanonicalName() + "('"
                             + path + "','" + key +"')");

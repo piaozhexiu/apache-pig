@@ -19,10 +19,9 @@
 package org.apache.pig.scripting.jruby;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
-import java.lang.reflect.Method;
 
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
@@ -30,23 +29,21 @@ import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
-
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.runtime.load.Library;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
+import org.jruby.RubyEnumerator;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNil;
+import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.RubyEnumerator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.Library;
 
 import com.google.common.collect.Maps;
 
@@ -481,4 +478,23 @@ public class PigJrubyLibrary implements Library {
             throw new RuntimeException("Unable to properly enumeratorize", e);
         }
     }
+    
+    /**
+     * Casts an IRubyObject into the expected RubyObject type
+     * @param <T> type parameter
+     * @param obj IRubyObject to cast 
+     * @param expected a sublcass type token of RubyObject to be cast to
+     * @return
+     */
+    public static <T extends RubyObject> T castTo(IRubyObject obj, Class<T> expected) {
+        if (obj == null || obj instanceof RubyNil)
+            return null;
+        try {
+            return expected.cast(obj);
+        }
+        catch (Exception e) {
+            return null;
+        }
+    }
+    
 }

@@ -36,14 +36,15 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.pig.FuncSpec;
+import org.apache.pig.OutputSchemaResolver;
 import org.apache.pig.PigServer;
 import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataByteArray;
 import org.apache.pig.impl.PigContext;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.ObjectSerializer;
-import org.apache.pig.impl.util.Utils;
 import org.apache.pig.scripting.ScriptEngine;
 import org.apache.pig.scripting.groovy.GroovyAlgebraicEvalFunc.BigDecimalGroovyAlgebraicEvalFunc;
 import org.apache.pig.scripting.groovy.GroovyAlgebraicEvalFunc.BigIntegerGroovyAlgebraicEvalFunc;
@@ -172,11 +173,15 @@ public class GroovyScriptEngine extends ScriptEngine {
 
         if (annotations.length > 0) {
           Schema schema = null;
+          String schemaDef = null;
+          String[] uniqueFields = null;
           String schemaFunction = null;
 
           for (Annotation annotation : annotations) {
             if (annotation.annotationType().equals(OutputSchema.class)) {
-              schema = Utils.getSchemaFromString(((OutputSchema) annotation).value());
+              schemaDef = ((OutputSchema)annotation).value();
+            } else if (annotation.annotationType().equals(Unique.class)) {
+              uniqueFields = ((Unique)annotation).value();
             } else if (annotation.annotationType().equals(OutputSchemaFunction.class)) {
               schemaFunction = ((OutputSchemaFunction) annotation).value();
             } else if (isAlgebraic(annotation)) {
@@ -291,6 +296,9 @@ public class GroovyScriptEngine extends ScriptEngine {
               accumethods[idx] = method;
             }
           }
+          OutputSchemaResolver schemaResolver = new OutputSchemaResolver(method.getName(),
+                  schemaDef, uniqueFields);
+          schema = schemaResolver.resolveSchema();
 
           //
           // Only register functions which have an output schema declared

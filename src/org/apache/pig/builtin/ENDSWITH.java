@@ -33,6 +33,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  * Pig UDF to test input <code>tuple.get(0)</code> against <code>tuple.get(1)</code>
  * to determine if the first argument ends with the string in the second.
  */
+@OutputSchema("boolean")
 public class ENDSWITH extends EvalFunc<Boolean> {
     @Override
     public Boolean exec(Tuple tuple) {
@@ -56,11 +57,6 @@ public class ENDSWITH extends EvalFunc<Boolean> {
             warn(ee.toString(), PigWarning.UDF_WARNING_4);
             return null;
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.BOOLEAN));
     }
 
     @Override

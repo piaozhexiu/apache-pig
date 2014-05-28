@@ -22,9 +22,8 @@ import java.io.IOException;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.PigWarning;
-import org.apache.pig.data.DataType;
+import org.apache.pig.builtin.OutputSchema;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 /**
  * This UDF is used to check if a String is numeric. Note this UDF is different
@@ -43,6 +42,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  * IsDouble) if range is important.
  * 
  */
+@OutputSchema("boolean")
 public class IsNumeric extends EvalFunc<Boolean> {
 
 	@Override
@@ -65,10 +65,5 @@ public class IsNumeric extends EvalFunc<Boolean> {
 					PigWarning.UDF_WARNING_1);
 			return false;
 		}
-	}
-
-	@Override
-	public Schema outputSchema(Schema input) {
-		return new Schema(new Schema.FieldSchema(null, DataType.BOOLEAN));
 	}
 }

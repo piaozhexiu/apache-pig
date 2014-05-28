@@ -19,14 +19,17 @@
 package org.apache.pig.test.udf.evalfunc;
 
 import java.io.IOException;
+
 import org.apache.pig.EvalFunc;
-import org.apache.pig.data.Tuple;
-import org.apache.pig.data.DefaultTupleFactory;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DefaultBagFactory;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.data.DataType;
+import org.apache.pig.data.DefaultTupleFactory;
+import org.apache.pig.data.Tuple;
 
+@OutputSchema("createmap:bag")
+@Unique
 public class CreateTupleBag extends EvalFunc<DataBag>
 {
 	//@Override
@@ -60,10 +63,5 @@ public class CreateTupleBag extends EvalFunc<DataBag>
 		output.add(t2);
 
 		return output;
-        }
-
-	@Override
-        public Schema outputSchema(Schema input) {
-                return new Schema(new Schema.FieldSchema(getSchemaName("createmap", input), DataType.BAG));
         }
 }

@@ -33,18 +33,15 @@ import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataType;
 import org.apache.pig.impl.PigContext;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.impl.util.Utils;
 import org.apache.pig.scripting.ScriptEngine;
 import org.apache.pig.tools.pigstats.PigStats;
-
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.ScriptingContainer;
-import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
-import org.jruby.CompatVersion;
 
 import com.google.common.collect.Maps;
 

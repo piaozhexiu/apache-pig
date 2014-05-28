@@ -18,28 +18,18 @@
 package org.apache.pig.test.utils;
 
 import org.apache.pig.EvalFunc;
-import org.apache.pig.data.DataType;
+import org.apache.pig.builtin.OutputSchema;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.FrontendException;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 
 /**
  * Returns the input
  */
+@OutputSchema(value = "tuple", useInputSchema = true)
 public class Identity extends EvalFunc<Tuple> {
 
     @Override
     public Tuple exec(Tuple input) {
         return input;
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        try {
-            return new Schema(new Schema.FieldSchema(null, input, DataType.TUPLE));
-        } catch (FrontendException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

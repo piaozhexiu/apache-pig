@@ -22,9 +22,9 @@ import java.io.IOException;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.data.DataType;
 
+@OutputSchema("long")
+@Unique
 public class LongAbs extends EvalFunc<Long>{
 	/**
 	 * java level API
@@ -43,10 +43,5 @@ public class LongAbs extends EvalFunc<Long>{
         }
 
 		return Math.abs(d);
-	}
-	
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.LONG));
 	}
 }

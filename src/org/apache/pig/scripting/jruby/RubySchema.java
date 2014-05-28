@@ -19,24 +19,25 @@
 package org.apache.pig.scripting.jruby;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Arrays;
 
+import org.apache.pig.OutputSchemaResolver;
+import org.apache.pig.data.DataType;
+import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.Utils;
-import org.apache.pig.data.DataType;
 import org.apache.pig.parser.ParserException;
-import org.apache.pig.impl.logicalLayer.FrontendException;
-
 import org.jruby.Ruby;
-import org.jruby.RubyHash;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyRange;
@@ -44,9 +45,9 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
 //TODO implement all of the merge functions
@@ -64,17 +65,12 @@ public class RubySchema extends RubyObject {
     private static final long serialVersionUID = 1L;
 
     /**
-     * This is a pattern used in the conversion from ruby arguments to a valid Schema. It detects
-     * cases where there is a bag, map, or tuple without being followed by {}, [], or () respectively.
-     * It is used for convenience.
-     */
-    private static final Pattern bmtPattern = Pattern.compile("(?:\\S+:)?(bag|map|tuple)\\s*(?:,|$)", Pattern.CASE_INSENSITIVE);
-
-    /**
      * This is the encapsulated Schema object.
      */
     private Schema internalSchema;
-
+    
+    private static int nextSchemaId;
+    
     private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubySchema(runtime, klass);
@@ -163,7 +159,8 @@ public class RubySchema extends RubyObject {
     /**
      * The ruby initializer accepts any number of arguments. With no arguments,
      * it will return an empty Schema object. It can accept any number of arguments.
-     * To understand the valid arguments, see the documentation for {@link #rubyArgToSchema}.
+     * To understand the valid arguments, see the documentation for {@link #rubyArgToSchema} and
+     * {@link #initFromAnnotation}
      *
      * @param args a varargs which can take any number of valid arguments to
      *             {@link #rubyArgToSchema}
@@ -172,15 +169,69 @@ public class RubySchema extends RubyObject {
     @JRubyMethod(rest = true)
     public RubySchema initialize(IRubyObject[] args) {
         internalSchema = new Schema();
-        for (IRubyObject arg : args) {
-            Schema rs = rubyArgToSchema(arg);
-            for (Schema.FieldSchema i : rs.getFields())
-                internalSchema.add(i);
+        if (args[0] instanceof RubySymbol && 
+                "annotation_flag".intern().equals(((RubySymbol)args[0]).asJavaString())) {
+            initFromAnnotation(args);
+        }
+        else {
+            for (IRubyObject arg : args) {
+                Schema rs = rubyArgToSchema(arg, null, null, false, null);
+                for (Schema.FieldSchema i : rs.getFields())
+                    internalSchema.add(i);
+            }
         }
         RubySchema.fixSchemaNames(internalSchema);
         return this;
     }
 
+
+    /**
+     * Initializes RubySchema from the given outputSchema annotation parameters
+     * 
+     * @param args - IRubyObject array that takes 5 annotation parameters in the following order:<br>
+     * <ul>
+     * <li> annotation flag that marks that parameters are passed from the annotation (RubySymbol) </li>
+     * <li> schema definition (RubyString) </li>
+     * <li> function name (RubyString) </li>
+     * <li> input schema definition (RubySchema) </li>
+     * <li> schema properties (RubyHash): defined by the keys: 'use_inputschema' and 'unique_fields' </li>
+     * </ul>
+     * @return
+     */
+    public RubySchema initFromAnnotation(IRubyObject[] args) {
+        if (args.length != 5)
+            return this;
+        IRubyObject schemaObj = args[1];
+        IRubyObject methodNameObj = args[2];
+        IRubyObject inputSchemaObj = args[3];
+        IRubyObject schemaPropsObj = args[4];
+        
+        boolean useInputSchema = false;
+        String[] uniqueFields = null;
+        RubyHash schemaProps = PigJrubyLibrary.castTo(schemaPropsObj, RubyHash.class);
+        if (schemaProps != null) {
+            for (Map.Entry<Object, Object> entry : (Set<Map.Entry<Object, Object>>)schemaProps.entrySet()) {
+                String key = entry.getKey().toString();
+                if ("use_inputschema".equals(key)) {
+                    useInputSchema = ((Boolean)entry.getValue()).booleanValue();
+                }
+                else if ("unique_fields".equals(key)) {
+                    RubyArray obj = (RubyArray)entry.getValue();
+                    if (obj == null)
+                        uniqueFields = new String[0];
+                    else
+                        uniqueFields = (String[])obj.toArray(new String[0]);
+                }
+            }
+        }
+        String functionName = PigJrubyLibrary.rubyToPig((RubyString)methodNameObj);
+        RubySchema inputSchema = PigJrubyLibrary.castTo(inputSchemaObj, RubySchema.class);
+        Schema rs = rubyArgToSchema(schemaObj, functionName, inputSchema, useInputSchema, uniqueFields);
+        for (Schema.FieldSchema fs : rs.getFields())
+            internalSchema.add(fs);
+        return this;
+    }
+    
     /**
      * This is a static helper method to create a null aliased bytearray Schema.
      * This is useful in cases where you do not want the output to have an explicit
@@ -392,38 +443,27 @@ public class RubySchema extends RubyObject {
      *
      * @param arg an object (generally an IRubyObject or String) to convert. See above for
                   the rules on valid arguments
+     * @param functionName name of the function being executed
+     * @param inputSchema input schema string
+     * @param useInputSchema flag that indicates whether input schema is incorporated into the output schema
+     * @param uniqueFields array of schema fields to be made unique
      * @return    the Schema constructed for the given argument
      */
-    public static Schema rubyArgToSchema(Object arg) {
+    public static Schema rubyArgToSchema(Object arg, String functionName, RubySchema inputSchema, boolean useInputSchema, String[] uniqueFields) {
         try {
-            /**
-             * Given a String or a RubyString, calls {@link Utils#getSchemaFromString}.
-             * Additionally, as a convenience to the user, this method uses a regex to
-             * detect any case where a schema declaration of "bag", "tuple", or "map"
-             * does not have the trailing "{}", "()", or "[]" that
-             * {@link Utils#getSchemaFromString} requires.
-             */
             if (arg instanceof String || arg instanceof RubyString) {
                 String s = arg.toString();
-                Matcher m = bmtPattern.matcher(s);
-                while (m.find()) {
-                    String type = m.group(1);
-                    String inter = s.substring(0, m.start(1));
-
-                    if (type.equalsIgnoreCase("bag")) {
-                         inter += "{}";
-                    } else if (type.equalsIgnoreCase("map")) {
-                         inter += "[]";
-                    } else if (type.equalsIgnoreCase("tuple")) {
-                         inter += "()";
-                    } else {
-                        throw new RuntimeException("Arriving here should be impossible");
-                    }
-
-                    s = inter + s.substring(m.end(1));
-                    m = bmtPattern.matcher(s);
+                if (functionName == null && inputSchema == null) {
+                    OutputSchemaResolver resolver = new OutputSchemaResolver(null, s, uniqueFields);
+                    Schema resolved = resolver.resolveSchema();
+                    return resolved;
                 }
-                return Utils.getSchemaFromString(s);
+                OutputSchemaResolver resolver = new OutputSchemaResolver(
+                        (inputSchema == null ? null : PigJrubyLibrary.rubyToPig(inputSchema)),
+                        functionName, s, uniqueFields, useInputSchema, nextSchemaId);
+                Schema resolved = resolver.resolveSchema();
+                nextSchemaId = resolver.getUpdatedNextSchemaId();
+                return resolved;
             // In the case of a RubySchema, can just return the encapsulated Schema
             } else if (arg instanceof RubySchema) {
                 return ((RubySchema)arg).getInternalSchema();
@@ -433,7 +473,7 @@ public class RubySchema extends RubyObject {
                 RubyArray ary = (RubyArray)arg;
                 Schema s = new Schema();
                 for (Object o : ary) {
-                    Schema ts = rubyArgToSchema(o);
+                    Schema ts = rubyArgToSchema(o, functionName, inputSchema, useInputSchema, uniqueFields);
                     for (Schema.FieldSchema fs : ts.getFields()) {
                       s.add(fs);
                     }
@@ -452,7 +492,7 @@ public class RubySchema extends RubyObject {
                 RubyHash hash = (RubyHash)arg;
                 Schema hashSchema = new Schema();
                 for (Object o : hash.keySet()) {
-                    Schema s = rubyArgToSchema(o);
+                    Schema s = rubyArgToSchema(o, functionName, inputSchema, useInputSchema, uniqueFields);
                     if (s.size() != 1) {
                         throw new RuntimeException("Hash key must be singular");
                     }
@@ -461,9 +501,9 @@ public class RubySchema extends RubyObject {
                     if (v instanceof RubyArray) {
                         byte type = fs.type;
                         if (type == DataType.BAG) {
-                            fs.schema = rubyArgToSchema(v);
+                            fs.schema = rubyArgToSchema(v, functionName, inputSchema, useInputSchema, uniqueFields);
                         } else if (type == DataType.TUPLE || type == DataType.MAP) {
-                            fs.schema = rubyArgToSchema(v).getField(0).schema;
+                            fs.schema = rubyArgToSchema(v, functionName, inputSchema, useInputSchema, uniqueFields).getField(0).schema;
                         } else {
                             throw new RuntimeException("Hash key must be tuple map or bag");
                         }
@@ -508,9 +548,10 @@ public class RubySchema extends RubyObject {
      * @return        the new RubySchema
      */
     @JRubyMethod(meta = true, name = {"t", "tuple"})
+    
     public static RubySchema tuple(ThreadContext context, IRubyObject self, IRubyObject arg) {
         if (arg instanceof RubyArray) {
-            Schema s = rubyArgToSchema(arg);
+            Schema s = rubyArgToSchema(arg, null, null, false, null);
             Ruby runtime = context.getRuntime();
             return new RubySchema(runtime, runtime.getClass("Schema"), s);
         } else {
@@ -968,4 +1009,13 @@ public class RubySchema extends RubyObject {
              throw new RuntimeException("Improper argument passed to 'name=':" + arg);
         }
     }
+
+    static int getNextSchemaId() {
+        return nextSchemaId;
+    }
+
+    static void setNextSchemaId(int nextSchemaId) {
+        RubySchema.nextSchemaId = nextSchemaId;
+    }
+    
 }

@@ -23,15 +23,12 @@ import java.util.Iterator;
 
 import org.apache.hadoop.util.bloom.BloomFilter;
 import org.apache.hadoop.util.bloom.Key;
-
 import org.apache.pig.Algebraic;
-import org.apache.pig.EvalFunc;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 /**
  * Build a bloom filter for use later in Bloom.  This UDF is intended to run
@@ -51,6 +48,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  * D = join C by z, A by x;
  * It uses {@link org.apache.hadoop.util.bloom.BloomFilter}.
  */
+@OutputSchema("bytearray")
 public class BuildBloom extends BuildBloomBase<DataByteArray> implements Algebraic {
 
     /** 
@@ -193,10 +191,4 @@ public class BuildBloom extends BuildBloomBase<DataByteArray> implements Algebra
             return bloomOr(input);
         }
     }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.BYTEARRAY)); 
-    }
-
 }

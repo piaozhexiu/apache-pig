@@ -22,9 +22,8 @@ import java.io.IOException;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.PigWarning;
 import org.apache.pig.backend.executionengine.ExecException;
-import org.apache.pig.data.DataType;
+import org.apache.pig.builtin.OutputSchema;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 /**
  * string.LENGTH implements eval function to find length of a string
@@ -34,6 +33,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  *      B = foreach A generate string.LENGTH(name);
  *      dump B;
  */
+@OutputSchema("int")
 public class LENGTH extends EvalFunc<Integer> {
 
     @Override
@@ -48,11 +48,6 @@ public class LENGTH extends EvalFunc<Integer> {
             warn("Error reading input: " + e.getMessage(), PigWarning.UDF_WARNING_1);
             return null;
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.INTEGER));
     }
 
 }

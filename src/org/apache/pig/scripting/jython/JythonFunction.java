@@ -21,11 +21,13 @@ package org.apache.pig.scripting.jython;
 import java.io.IOException;
 
 import org.apache.pig.EvalFunc;
+import org.apache.pig.OutputSchemaResolver;
 import org.apache.pig.ResourceSchema;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
+import org.apache.pig.impl.util.CastUtils;
 import org.apache.pig.impl.util.Utils;
 import org.apache.pig.parser.ParserException;
 import org.python.core.Py;
@@ -46,6 +48,7 @@ public class JythonFunction extends EvalFunc<Object> {
     private int num_parameters;
     private String scriptFilePath;
     private String outputSchemaFunc;
+    private boolean useInputSchema;
     
     public JythonFunction(String filename, String functionName) throws IOException{
         PyFunction f;
@@ -57,8 +60,18 @@ public class JythonFunction extends EvalFunc<Object> {
             num_parameters = ((PyBaseCode) f.func_code).co_argcount;
             PyObject outputSchemaDef = f.__findattr__("outputSchema".intern());
             if (outputSchemaDef != null) {
-                this.schema = Utils.getSchemaFromString(outputSchemaDef.toString());
-                logOnce("Schema '"+outputSchemaDef.toString()+"' defined for func "+functionName);
+                String schemaDef = outputSchemaDef.toString();
+                useInputSchema = CastUtils.booleanValue(JythonUtils.asJavaObject(f,
+                        "useInputSchema", Boolean.class));
+                String[] uniqueFields = JythonUtils.asJavaObject(f, "fields", String[].class);
+                //if schema is not static, will be resolved in outputschema() 
+                if (useInputSchema || uniqueFields != null) {
+                    return;
+                }
+                OutputSchemaResolver schemaResolver = new OutputSchemaResolver(functionName,
+                        schemaDef, null);
+                this.schema = schemaResolver.resolveSchema();
+                logOnce("Schema '"+schema+"' defined for func "+functionName);
                 found = true;
             }
             PyObject outputSchemaFunctionDef = f.__findattr__("outputSchemaFunction".intern());
@@ -128,6 +141,21 @@ public class JythonFunction extends EvalFunc<Object> {
         if(schema != null) {
             return schema;
         } else {
+            String[] uniqueFields = JythonUtils.asJavaObject(function, "fields", String[].class);
+            // outputschema has unique fields or depends on the input schema
+            if (outputSchemaFunc == null && (useInputSchema || uniqueFields != null)) {
+                try {
+                    String schemaDef = JythonUtils.asJavaObject(function, "outputSchema", String.class);
+                    OutputSchemaResolver schemaResolver = new OutputSchemaResolver(input,
+                            function.__name__, schemaDef, uniqueFields, useInputSchema, nextSchemaId);
+                    Schema resolved = schemaResolver.resolveSchema();
+                    nextSchemaId = schemaResolver.getUpdatedNextSchemaId();
+                    return resolved;
+                }
+                catch (ParserException e) {
+                    throw new RuntimeException(e);
+                }
+            }
             if(outputSchemaFunc != null) {
                 PyFunction pf;
                 try {

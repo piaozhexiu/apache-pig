@@ -25,6 +25,8 @@ import java.util.Set;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.FuncSpec;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.DefaultBagFactory;
@@ -41,6 +43,8 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  * Example 2: if record = (u1, h1, pig hadoop) and _ngramSizeLimit = 2,
  * the record is split into: (u1, h1, pig), (u1, h1, hadoop), (u1, h1, pig hadoop)
  */
+@OutputSchema("${0}:{ngram:chararray}")
+@Unique("${0}")
 public class NGramGenerator extends EvalFunc<DataBag> {
 
     private static final int _ngramSizeLimit = 2;
@@ -65,24 +69,7 @@ public class NGramGenerator extends EvalFunc<DataBag> {
             return null;
         }
     }
-
-    @Override
-    /**
-     * This method gives a name to the column.
-     * @param input - schema of the input data
-     * @return schema of the input data
-     */
-    public Schema outputSchema(Schema input) {
-         Schema bagSchema = new Schema();
-         bagSchema.add(new Schema.FieldSchema("ngram", DataType.CHARARRAY));
-         try{
-            return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), 
-                                                    bagSchema, DataType.BAG));
-         }catch (FrontendException e){
-            return null;
-         }
-    }
-
+    
     /* (non-Javadoc)
      * @see org.apache.pig.EvalFunc#getArgToFuncMapping()
      * This is needed to make sure that both bytearrays and chararrays can be passed as arguments

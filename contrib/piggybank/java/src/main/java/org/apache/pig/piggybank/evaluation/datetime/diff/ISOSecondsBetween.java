@@ -19,6 +19,8 @@ package org.apache.pig.piggybank.evaluation.datetime.diff;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.FuncSpec;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
@@ -78,7 +80,8 @@ import java.util.List;
  * (0L,-10L,-332,-7988L,-479334L,-28760097L)
  * </pre>
  */
-
+@OutputSchema("long")
+@Unique
 public class ISOSecondsBetween extends EvalFunc<Long> {
 
     @Override
@@ -100,11 +103,6 @@ public class ISOSecondsBetween extends EvalFunc<Long> {
 
         return seconds;
     }
-
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.LONG));
-	}
 
     @Override
     public List<FuncSpec> getArgToFuncMapping() throws FrontendException {

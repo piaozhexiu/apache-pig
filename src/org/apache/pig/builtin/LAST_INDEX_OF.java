@@ -22,13 +22,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.pig.FuncSpec;
 import org.apache.pig.EvalFunc;
+import org.apache.pig.FuncSpec;
 import org.apache.pig.PigWarning;
-import org.apache.pig.data.Tuple;
 import org.apache.pig.data.DataType;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
+import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
+import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 /**
  * string.INSTR implements eval function to search for the last occurrence of a string
@@ -39,6 +39,7 @@ import org.apache.pig.impl.logicalLayer.FrontendException;
  *      B = foreach A generate LASTINDEXOF(name, ",");
  * </code>
  */
+@OutputSchema("int")
 public class LAST_INDEX_OF extends EvalFunc<Integer> {
 
     /**
@@ -63,11 +64,6 @@ public class LAST_INDEX_OF extends EvalFunc<Integer> {
             warn("Failed to process input; error - " + e.getMessage(), PigWarning.UDF_WARNING_1);
             return null;
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.INTEGER));
     }
 
     /* (non-Javadoc)

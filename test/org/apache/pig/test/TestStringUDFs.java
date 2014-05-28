@@ -62,31 +62,31 @@ public class TestStringUDFs {
     @Test
     public void testStringSubstr_BI_EQ_EI() throws IOException {
         Tuple testTuple = Util.buildTuple("abc", 0, 0);
-        assertEquals("Testing SUBSTIRNG, beginindex == endindex", "", stringSubstr_.exec(testTuple));
+        assertEquals("Testing SUBSTRING, beginindex == endindex", "", stringSubstr_.exec(testTuple));
     }
     
     @Test
     public void testStringSubstr_BI_LT_EI() throws IOException {
         Tuple testTuple = Util.buildTuple("abc", -2, 2);
-        assertEquals("Testing SUBSTIRNG, beginindex < endindex", null, stringSubstr_.exec(testTuple));
+        assertEquals("Testing SUBSTRING, beginindex < endindex", null, stringSubstr_.exec(testTuple));
     }
     
     @Test
     public void testStringSubstr_BI_LT_ZERO() throws IOException {
         Tuple testTuple = Util.buildTuple("abc", -1, 2);
-        assertEquals("Testing SUBSTIRNG, beginindex < 0", null, stringSubstr_.exec(testTuple));
+        assertEquals("Testing SUBSTRING, beginindex < 0", null, stringSubstr_.exec(testTuple));
     }
        
     @Test
     public void testStringSubstr_BI_GT_EI() throws IOException {
         Tuple testTuple = Util.buildTuple("abc", 10, 2);
-        assertEquals("Testing SUBSTIRNG, beginindex > endindex", null, stringSubstr_.exec(testTuple));
+        assertEquals("Testing SUBSTRING, beginindex > endindex", null, stringSubstr_.exec(testTuple));
     }
     
     @Test
     public void testStringSubstr_EI_LT_ZERO() throws IOException {
         Tuple testTuple = Util.buildTuple("abc", 0, -2);
-        assertEquals("Testing SUBSTIRNG, endindex < 0", null, stringSubstr_.exec(testTuple));
+        assertEquals("Testing SUBSTRING, endindex < 0", null, stringSubstr_.exec(testTuple));
     }
 
     @Test

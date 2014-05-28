@@ -17,8 +17,14 @@
  */
 package org.apache.pig.piggybank.evaluation.datetime.diff;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.pig.EvalFunc;
 import org.apache.pig.FuncSpec;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
@@ -26,11 +32,6 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Days;
-import org.joda.time.ReadableInstant;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * <p>ISODaysBetween returns the number of days between two ISO8601 datetimes as a Long</p>
@@ -83,7 +84,8 @@ import java.util.List;
  *
  * </pre>
  */
-
+@OutputSchema("long")
+@Unique
 public class ISODaysBetween extends EvalFunc<Long> {
 
     @Override
@@ -106,11 +108,6 @@ public class ISODaysBetween extends EvalFunc<Long> {
         return days;
 
     }
-
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.LONG));
-	}
 
     @Override
     public List<FuncSpec> getArgToFuncMapping() throws FrontendException {

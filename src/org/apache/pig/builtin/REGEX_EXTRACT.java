@@ -47,7 +47,8 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
 * <dd><code>DEFINE NON_GREEDY_EXTRACT REGEX_EXTRACT('true');</code></dd>
 * </dl>
 */
-
+@OutputSchema("chararray")
+@Unique
 public class REGEX_EXTRACT extends EvalFunc<String> {
     String mExpression = null;
     Pattern mPattern = null;
@@ -57,15 +58,6 @@ public class REGEX_EXTRACT extends EvalFunc<String> {
 
     public REGEX_EXTRACT(String useMatches) {
         this.mUseMatches = Boolean.parseBoolean(useMatches);
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-      try {
-          return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.CHARARRAY));
-      } catch (Exception e) {
-        return null;
-      }
     }
 
     @Override

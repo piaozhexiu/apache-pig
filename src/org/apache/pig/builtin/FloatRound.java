@@ -22,14 +22,14 @@ import java.io.IOException;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.data.DataType;
 
 /**
  * ROUND implements a binding to the Java function
  * {@link java.lang.Math#round(float) Math.round(float)}. 
  * Given a single data atom it Returns the closest long to the argument.
  */
+@OutputSchema("int")
+@Unique
 public class FloatRound extends EvalFunc<Integer>{
 	/**
 	 * java level API
@@ -48,10 +48,5 @@ public class FloatRound extends EvalFunc<Integer>{
         } catch (Exception e){
             throw new IOException("Caught exception processing input row ", e);
         }
-	}
-	
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.INTEGER));
 	}
 }

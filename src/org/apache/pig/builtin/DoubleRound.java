@@ -22,12 +22,12 @@ import java.io.IOException;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.data.DataType;
 
 /**
  * Given a single data atom it Returns the closest long to the argument.
  */
+@OutputSchema("long")
+@Unique
 public class DoubleRound extends EvalFunc<Long>{
 	/**
 	 * java level API
@@ -46,10 +46,5 @@ public class DoubleRound extends EvalFunc<Long>{
         } catch (Exception e){
             throw new IOException("Caught exception processing input row ", e);
         }
-	}
-	
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.LONG));
 	}
 }

@@ -36,6 +36,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  * Generates the concatenation of the first two arguments.  It can be
  * used with two bytearrays or two chararrays (but not a mixture of the two).
  */
+@OutputSchema("bytearray")
 public class CONCAT extends EvalFunc<DataByteArray> {
 
     @Override
@@ -58,11 +59,6 @@ public class CONCAT extends EvalFunc<DataByteArray> {
             String msg = "Error while computing concat in " + this.getClass().getSimpleName();
             throw new ExecException(msg, errCode, PigException.BUG, e);
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.BYTEARRAY));
     }
 
     /* (non-Javadoc)

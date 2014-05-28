@@ -65,6 +65,8 @@ import org.joda.time.DateTime;
  * ...
  *</pre>
  */
+@OutputSchema("long")
+@Unique
 public class ToUnixTime extends EvalFunc<Long> {
 
     @Override
@@ -79,11 +81,6 @@ public class ToUnixTime extends EvalFunc<Long> {
 
         return result.getMillis() / 1000;
     }
-
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.LONG));
-	}
 
     @Override
     public List<FuncSpec> getArgToFuncMapping() throws FrontendException {

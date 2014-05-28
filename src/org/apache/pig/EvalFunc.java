@@ -18,11 +18,22 @@
  */
 package org.apache.pig;
 
+import java.io.IOException;
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.pig.backend.hadoop.executionengine.physicalLayer.PigLogger;
 import org.apache.pig.backend.hadoop.executionengine.physicalLayer.PigProgressable;
 import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.classification.InterfaceAudience;
 import org.apache.pig.classification.InterfaceStability;
 import org.apache.pig.data.Tuple;
@@ -30,14 +41,7 @@ import org.apache.pig.impl.PigContext;
 import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.UDFContext;
-import org.apache.pig.impl.util.Utils;
 import org.apache.pig.parser.ParserException;
-
-import java.io.IOException;
-import java.lang.reflect.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 
 /**
@@ -73,15 +77,9 @@ public abstract class EvalFunc<T>  {
      */
     protected PigLogger pigLogger;
 
-    private static int nextSchemaId; // for assigning unique ids to UDF columns
+    protected static int nextSchemaId; // for assigning unique ids to UDF columns
     protected String getSchemaName(String name, Schema input) {
-        String alias = name + "_";
-        if (input!=null && input.getAliases().size() > 0){
-            alias += input.getAliases().iterator().next() + "_";
-        }
-
-        alias += ++nextSchemaId;
-        return alias;
+        return OutputSchemaResolver.getSchemaName(name, input, ++nextSchemaId);
     }
 
     /**
@@ -219,10 +217,28 @@ public abstract class EvalFunc<T>  {
      * @return Schema of the output
      */
     public Schema outputSchema(Schema input) {
-        OutputSchema schema = this.getClass().getAnnotation(OutputSchema.class);
         try {
-            return (schema == null) ? null : Utils.getSchemaFromString(schema.value());
-        } catch (ParserException e) {
+            Class<?> clazz = this.getClass();
+            boolean useInputSchema = false;
+            String schemaDef = null;
+            String [] uniqueFields;
+            OutputSchema os = clazz.getAnnotation(OutputSchema.class);
+            if (os == null)
+                return null;
+
+            useInputSchema = os.useInputSchema();
+            schemaDef = os.value().isEmpty() ? null : os.value();
+            Unique unique = clazz.getAnnotation(Unique.class);
+            uniqueFields = (unique == null ? null : unique.value());
+            
+            OutputSchemaResolver resolver = new OutputSchemaResolver(input, clazz.getName().toLowerCase(),
+                    schemaDef, uniqueFields, useInputSchema, nextSchemaId);
+            
+            Schema resolved = resolver.resolveSchema();
+            nextSchemaId = resolver.getUpdatedNextSchemaId();
+            return resolved;
+        }
+        catch (ParserException e) {
             throw new RuntimeException(e);
         }
     }

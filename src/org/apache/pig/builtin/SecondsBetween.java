@@ -28,7 +28,6 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.joda.time.DateTime;
-import org.joda.time.Seconds;
 
 /**
  * <p>SecondsBetween returns the number of seconds between two DateTime objects</p>
@@ -73,6 +72,8 @@ import org.joda.time.Seconds;
  *
  * </pre>
  */
+@OutputSchema("long")
+@Unique
 public class SecondsBetween extends EvalFunc<Long> {
 
     @Override
@@ -89,11 +90,6 @@ public class SecondsBetween extends EvalFunc<Long> {
         // Subtraction may overflow
         return (startDate.getMillis() - endDate.getMillis()) / 1000L;
     }
-
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.LONG));
-	}
 
     @Override
     public List<FuncSpec> getArgToFuncMapping() throws FrontendException {

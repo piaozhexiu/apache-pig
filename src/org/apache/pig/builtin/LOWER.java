@@ -35,6 +35,8 @@ import org.apache.pig.FuncSpec;
  *      A = load 'mydata' as (name);
  *      B = foreach A generate LOWER(name);
  */
+@OutputSchema("chararray")
+@Unique
 public class LOWER extends EvalFunc<String> {
 
     /**
@@ -54,16 +56,6 @@ public class LOWER extends EvalFunc<String> {
             warn("Failed to process input; error - " + e.getMessage(), PigWarning.UDF_WARNING_1);
             return null;
         }
-    }
-
-    /**
-     * This method gives a name to the column.
-     * @param input - schema of the input data
-     * @return schema of the input data
-     */
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.CHARARRAY));
     }
 
      /* (non-Javadoc)

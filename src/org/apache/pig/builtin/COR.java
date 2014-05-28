@@ -26,11 +26,9 @@ import java.util.Vector;
 import org.apache.pig.Algebraic;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.data.DataBag;
-import org.apache.pig.data.DataType;
 import org.apache.pig.data.DefaultBagFactory;
-import org.apache.pig.data.TupleFactory;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
+import org.apache.pig.data.TupleFactory;
 
 /**
 * Computes the correlation between sets of data.  The returned value 
@@ -42,7 +40,8 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
 * B = group A all;<br/>
 * D = foreach B generate group,COR(A.$0,A.$1,A.$2);<br/>
 */
-
+@OutputSchema("bag")
+@Unique
 public class COR extends EvalFunc<DataBag> implements Algebraic {
     //name of the schemas. Initialize when user use define
     protected Vector<String>schemaName = new Vector<String>();
@@ -337,10 +336,4 @@ public class COR extends EvalFunc<DataBag> implements Algebraic {
         return result;
         
     } 
-    
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.BAG));
-    } 
-
 }

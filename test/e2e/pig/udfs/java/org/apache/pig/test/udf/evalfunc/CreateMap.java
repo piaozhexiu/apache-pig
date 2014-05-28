@@ -19,13 +19,16 @@
 package org.apache.pig.test.udf.evalfunc;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.HashMap;
-import org.apache.pig.EvalFunc;
-import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.data.DataType;
+import java.util.Map;
 
+import org.apache.pig.EvalFunc;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
+import org.apache.pig.data.Tuple;
+
+@OutputSchema("createmap:map")
+@Unique
 public class CreateMap extends EvalFunc<Map<String, Object> >
 {
 	//@Override
@@ -50,10 +53,5 @@ public class CreateMap extends EvalFunc<Map<String, Object> >
 		output.put(key, val);
 
 		return output;
-        }
-
-	@Override
-        public Schema outputSchema(Schema input) {
-                return new Schema(new Schema.FieldSchema(getSchemaName("createmap", input), DataType.MAP));
         }
 }

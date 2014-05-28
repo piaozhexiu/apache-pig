@@ -19,7 +19,6 @@ package org.apache.pig.builtin;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Map;
 
 import org.apache.pig.Accumulator;
 import org.apache.pig.Algebraic;
@@ -27,10 +26,8 @@ import org.apache.pig.EvalFunc;
 import org.apache.pig.PigException;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
-import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 /**
  * Generates the count of the values of the first field of a tuple. 
@@ -52,7 +49,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  * the preferred method of usage it is available in case the combiner can not be
  * used for a given calculation.
  */
-
+@OutputSchema("long")
 public class COUNT_STAR extends EvalFunc<Long> implements Algebraic, Accumulator<Long>{
     private static TupleFactory mTupleFactory = TupleFactory.getInstance();
 
@@ -135,11 +132,6 @@ public class COUNT_STAR extends EvalFunc<Long> implements Algebraic, Accumulator
             sum += (Long)t.get(0);
         }
         return sum;
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.LONG)); 
     }
 
     /* Accumulator interface imlpemenatation */

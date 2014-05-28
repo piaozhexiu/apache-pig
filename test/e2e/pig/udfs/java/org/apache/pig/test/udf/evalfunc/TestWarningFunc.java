@@ -19,16 +19,16 @@
 package org.apache.pig.test.udf.evalfunc;
 
 import java.io.IOException;
-import java.util.StringTokenizer;
-import org.apache.pig.EvalFunc;
-import org.apache.pig.data.DataBag;
-import org.apache.pig.data.DefaultBagFactory;
-import org.apache.pig.data.Tuple;
-import org.apache.pig.data.DefaultTupleFactory;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.data.DataType;
-import org.apache.pig.PigWarning;
 
+import org.apache.pig.EvalFunc;
+import org.apache.pig.PigWarning;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
+import org.apache.pig.data.DataType;
+import org.apache.pig.data.Tuple;
+
+@OutputSchema("output:double")
+@Unique
 public class TestWarningFunc extends EvalFunc<Double>
 {
 	//@Override
@@ -83,10 +83,5 @@ public class TestWarningFunc extends EvalFunc<Double>
         }
 
 		return output;
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName("output", input), DataType.DOUBLE));
     }
 }

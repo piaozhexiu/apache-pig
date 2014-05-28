@@ -67,6 +67,8 @@ import org.joda.time.Period;
  *
  * </pre>
  */
+@OutputSchema("datetime")
+@Unique
 public class SubtractDuration extends EvalFunc<DateTime> {
 
     @Override
@@ -78,11 +80,6 @@ public class SubtractDuration extends EvalFunc<DateTime> {
         return ((DateTime) input.get(0)).minus(new Period((String) input.get(1)));
     }
     
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.DATETIME));
-    }
-
     @Override
     public List<FuncSpec> getArgToFuncMapping() throws FrontendException {
         List<FuncSpec> funcList = new ArrayList<FuncSpec>();

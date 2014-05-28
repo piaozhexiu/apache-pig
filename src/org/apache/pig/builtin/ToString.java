@@ -36,6 +36,8 @@ import org.joda.time.format.DateTimeFormatter;
  * <p>ToString converts the DateTime object of the ISO or the customized string.</p>
  *
  */
+@OutputSchema("chararray")
+@Unique
 public class ToString extends EvalFunc<String> {
 
     public String exec(Tuple input) throws IOException {
@@ -50,11 +52,6 @@ public class ToString extends EvalFunc<String> {
         } else {
             return null;
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.CHARARRAY));
     }
 
     @Override

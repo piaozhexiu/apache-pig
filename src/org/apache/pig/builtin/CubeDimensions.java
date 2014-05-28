@@ -24,12 +24,8 @@ import org.apache.pig.EvalFunc;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.BagFactory;
 import org.apache.pig.data.DataBag;
-import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-import org.apache.pig.impl.logicalLayer.FrontendException;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.impl.logicalLayer.schema.Schema.FieldSchema;
 
 import com.google.common.collect.Lists;
 
@@ -65,6 +61,7 @@ import com.google.common.collect.Lists;
  * in very slow reducers, since one of the groups is going to get <i>all</i> the
  * records in your relation.
  */
+@OutputSchema(value = "dimensions:bag", useInputSchema = true)
 public class CubeDimensions extends EvalFunc<DataBag> {
 
     private static BagFactory bf = BagFactory.getInstance();
@@ -114,16 +111,6 @@ public class CubeDimensions extends EvalFunc<DataBag> {
             result.add(newnewt);
         } else {
             recursivelyCube(result, input, index + 1, newnewt);
-        }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        try {
-            return new Schema(new FieldSchema("dimensions", input, DataType.BAG));
-        } catch (FrontendException e) {
-            // we are specifying BAG explicitly, so this should not happen.
-            throw new RuntimeException(e);
         }
     }
 }

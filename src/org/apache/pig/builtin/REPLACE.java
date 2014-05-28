@@ -40,6 +40,7 @@ import org.apache.pig.impl.logicalLayer.FrontendException;
  * This is a wrapper around Java's String.replaceAll(String, String);
  *
  */
+@OutputSchema("chararray")
 public class REPLACE extends EvalFunc<String>
 {
     /**
@@ -61,11 +62,6 @@ public class REPLACE extends EvalFunc<String>
             warn("Failed to process input; error - " + e.getMessage(), PigWarning.UDF_WARNING_1);
             return null;
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.CHARARRAY));
     }
 
     /* (non-Javadoc)

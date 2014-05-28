@@ -202,5 +202,14 @@ public class CastUtils {
             }
         }
     }
+	
+	/**
+	 * Returns the primitive value of the Boolean wrapper. Null input is treated as false result
+	 * @param wrapper
+	 * @return
+	 */
+	public static boolean booleanValue(Boolean wrapper) {
+	    return (wrapper == null) ? false : wrapper.booleanValue();
+	}
 
 }

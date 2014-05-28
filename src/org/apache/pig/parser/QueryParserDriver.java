@@ -102,7 +102,7 @@ public class QueryParserDriver {
         return ast;
     }
 
-    public LogicalSchema parseSchema(String input) throws ParserException {
+    public LogicalSchema parseSchema(String input, boolean validateSchemaAlias, boolean generateFieldName) throws ParserException {
         CommonTokenStream tokenStream = tokenize( input, null );
         LogicalSchema schema = null;
         Tree ast = parseSchema( tokenStream );
@@ -110,11 +110,14 @@ public class QueryParserDriver {
         try{
             CommonTreeNodeStream nodes = new CommonTreeNodeStream( ast );
             AstValidator walker = new AstValidator( nodes );
+            walker.setValidateSchemaAlias(validateSchemaAlias);
+            walker.setGenerateFieldName(generateFieldName);
             ast = (Tree)walker.field_def_list().getTree();
             checkError( walker );
 
             LogicalPlanGenerator planGenerator =
                 new LogicalPlanGenerator( new CommonTreeNodeStream( ast ), pigContext, scope, fileNameMap );
+            planGenerator.setGenerateFieldName(generateFieldName);
             schema = planGenerator.field_def_list().schema;
             checkError( planGenerator );
         } catch(RecognitionException ex) {

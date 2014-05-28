@@ -45,7 +45,8 @@ class PigUdf
   @@functions_to_register = {}
   @@class_object_to_name_and_add = nil
   @@schema = nil
-
+  @@output_schema_props = {}
+  
   # See the documentation on self.evalfunc for why this is necessary. This takes the current class
   # object and registers it. This is necessary because self.evalfunc has to return before .to_s
   # will return something meaningful and not gibberish.
@@ -66,12 +67,12 @@ class PigUdf
   # to pass to the UDF, and the output_schema defines the Schema of the output, either
   # as a string, or as a function.
 
-  def self.register_function pig_func_name, class_object, arity, output_schema
+  def self.register_function pig_func_name, class_object, arity, output_schema, output_schema_props
     self.name_and_add_class_object
 
     pig_func_name = pig_func_name.to_s
 
-    reg = EvalFunc.new class_object, pig_func_name, arity, output_schema
+    reg = EvalFunc.new class_object, pig_func_name, arity, output_schema, output_schema_props
 
     @@functions_to_register[pig_func_name] = reg
   end
@@ -100,13 +101,13 @@ class PigUdf
   # to return will not yield the name it is given. Thus, we plant "GETCLASSFROMOBJECT" so the next
   # time we access @functions_to_register, we know to check.
 
-  def self.evalfunc output_schema, &blk
+  def self.evalfunc output_schema, output_schema_props=nil, &blk
     c=Class.new do
       define_method :eval do |*args|
         blk.call(*args)
       end
     end
-    self.set_class_object_to_name_and_add EvalFunc.new c, "GETFROMCLASSOBJECT", blk.arity, output_schema
+    self.set_class_object_to_name_and_add EvalFunc.new c, "GETFROMCLASSOBJECT", blk.arity, output_schema, output_schema_props
     c
   end
 
@@ -119,7 +120,7 @@ class PigUdf
         blk.call(*args)
       end
     end
-    self.set_class_object_to_name_and_add EvalFunc.new c, "GETFROMCLASSOBJECT", blk.arity, Schema.boolean
+    self.set_class_object_to_name_and_add EvalFunc.new c, "GETFROMCLASSOBJECT", blk.arity, Schema.boolean, nil
     c
   end
 
@@ -161,14 +162,19 @@ class PigUdf
   #   return x + y
   # end
   # output_schema :sum, "long"
-
-  def self.output_schema arg1, arg2=nil
-    if arg2
+  
+  def self.output_schema arg1, arg2=nil, arg3 = nil
+    if arg3 || (!arg2.nil? && !arg2.kind_of?(Hash))
       function_name = arg1.to_s
       schema = arg2.to_s
-      self.register_function function_name, self, function_name, schema
+      self.register_function function_name, self, function_name, schema, arg3
     else
-      @@schema = arg1
+      if !arg2
+        @@schema = arg1
+      elsif arg2.kind_of?(Hash)
+        @@schema = arg1
+        @@output_schema_props = arg2
+      end
     end
   end
 
@@ -197,10 +203,11 @@ class PigUdf
   # appended to it so that when this function is running in Java, we'll know that we should be using a function.
 
   def self.output_schema_function arg1, arg2=nil #TODO allow it to also accept a block, as in ComplexPigUdf
+    @@output_schema_props = {}
     schema_func = (arg2||arg1).to_sym
     if arg2
       function_name = arg1.to_s
-      self.register_function function_name, self, function_name, schema_func.to_sym
+      self.register_function function_name, self, function_name, schema_func.to_sym, nil
     else
       @@schema = arg1.to_sym
     end
@@ -220,9 +227,9 @@ class PigUdf
 
   def self.method_added function_name
     if @@schema
-      self.register_function function_name, self, function_name, @@schema
+      self.register_function function_name, self, function_name, @@schema, @@output_schema_props
     elsif !@@functions_to_register[function_name]
-      self.register_function function_name, self, function_name, nil
+      self.register_function function_name, self, function_name, nil, nil
     end
     @@schema = nil
   end
@@ -281,9 +288,11 @@ class PigUdf
   end
 
   class EvalFunc < Function
-    def initialize class_object, method_name, arity, schema_or_func
+    def initialize class_object, method_name, arity, schema_or_func, output_schema_props
       super class_object, method_name, arity
       @schema_or_func = schema_or_func
+      @output_schema_props = output_schema_props
+      @method_name = method_name
     end
 
     # This is the function that will be used from Java to get the proper schema of the output.
@@ -296,7 +305,7 @@ class PigUdf
       if !@schema_or_func
          return Schema.bytearray
       elsif @schema_or_func.is_a? String
-         return Schema.new @schema_or_func
+         return Schema.new :annotation_flag, @schema_or_func, @method_name, input_schema, @output_schema_props
       elsif @schema_or_func.is_a? Schema
          return @schema_or_func
       else
@@ -384,13 +393,14 @@ end
 # end
 
 class AccumulatorPigUdf < ComplexUdfBase
-  def self.output_schema schema=nil, &blk
+  def self.output_schema schema=nil, output_schema_props=nil, &blk
     if block_given?
-      throw "Can specify block or schema but not both!" if schema
+      throw "Can specify block or schema but not both!" if schema or output_schema_props
       throw "Block must accept one argument!" if blk.arity != 1
       @schema = blk
     else
       @schema = schema
+      @output_schema_props = output_schema_props
     end
   end
 
@@ -400,16 +410,19 @@ class AccumulatorPigUdf < ComplexUdfBase
 
   def self.get_output_schema input_schema=nil
     if input_schema && @schema.class == Proc
-      @schema.call input_schema
+      @schema.call input_schema, @output_schema_props
     else
-      Schema.new(@schema||Schema.bytearray)
+      if @schema
+        Schema.new :annotation_flag, @schema, self.name, input_schema, @output_schema_props
+      else Schema.bytearray
+      end
     end
   end
 
   necessary_methods :exec, :get
 end
 
-# This is the class that any Accumulator UDF must extend. The necessary_methods call ensures that all
+# This is the class that any Algebraic UDF must extend. The necessary_methods call ensures that all
 # child classes have the necessary methods implemented.
 #
 # an example of an Algebraic UDF is:

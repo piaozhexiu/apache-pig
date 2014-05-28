@@ -24,6 +24,8 @@ import java.util.ArrayList;
 
 import org.apache.pig.FuncSpec;
 import org.apache.pig.EvalFunc;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.data.DataType;
@@ -58,6 +60,8 @@ import org.apache.pig.impl.logicalLayer.FrontendException;
 * @author ajay garg
 *
 */
+@OutputSchema("double")
+@Unique
 public class copySign extends EvalFunc<Double>{
 	/**
 	 * java level API
@@ -82,11 +86,6 @@ public class copySign extends EvalFunc<Double>{
 		}
 	}
 	
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.DOUBLE));
-	}
-
     /* (non-Javadoc)
      * @see org.apache.pig.EvalFunc#getArgToFuncMapping()
      */

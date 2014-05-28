@@ -20,22 +20,20 @@ package org.apache.pig.builtin;
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.joda.time.DateTime;
-
 import org.apache.pig.Accumulator;
 import org.apache.pig.Algebraic;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.PigException;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
-import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
+import org.joda.time.DateTime;
 
 /**
  * This method should never be used directly, use {@link MAX}.
  */
+@OutputSchema("datetime")
 public class DateTimeMin extends EvalFunc<DateTime> implements Algebraic, Accumulator<DateTime> {
 
     @Override
@@ -150,12 +148,6 @@ public class DateTimeMin extends EvalFunc<DateTime> implements Algebraic, Accumu
 
         return curMin;
     }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.DATETIME));
-    }
-
 
     /* accumulator interface */
     private DateTime intermediateMin = null;

@@ -44,6 +44,7 @@ import org.apache.pig.FuncSpec;
 import org.apache.pig.PigServer;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.builtin.BinStorage;
+import org.apache.pig.builtin.OutputSchema;
 import org.apache.pig.builtin.PigStorage;
 import org.apache.pig.builtin.TextLoader;
 import org.apache.pig.data.BagFactory;
@@ -201,6 +202,7 @@ public class TestEvalPipelineLocal {
         Assert.assertFalse(iter.hasNext());
     }
     
+    @OutputSchema("{(chararray)}")
     static public class TitleNGrams extends EvalFunc<DataBag> {
         
         @Override
@@ -259,18 +261,9 @@ public class TestEvalPipelineLocal {
             }
             return sb.toString();
         }
-
-        public Schema outputSchema(Schema input) {
-            try {
-            Schema stringSchema = new Schema(new Schema.FieldSchema(null, DataType.CHARARRAY));
-            Schema.FieldSchema fs = new Schema.FieldSchema(null, stringSchema, DataType.BAG);
-            return new Schema(fs);
-            } catch (Exception e) {
-                return null;
-            }
-        }
     }
 
+    @OutputSchema("map")
     static public class MapUDF extends EvalFunc<Map<String, Object>> {
         @Override
         public Map<String, Object> exec(Tuple input) throws IOException {
@@ -302,10 +295,6 @@ public class TestEvalPipelineLocal {
             myMap.put("tuple", tuple);
             myMap.put("bag", bag);
             return myMap; 
-        }
-
-        public Schema outputSchema(Schema input) {
-            return new Schema(new Schema.FieldSchema(null, DataType.MAP));
         }
     }
     

@@ -19,15 +19,11 @@
 package org.apache.pig.piggybank.evaluation.math;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.ArrayList;
 
 import org.apache.pig.EvalFunc;
-import org.apache.pig.FuncSpec;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.data.DataType;
-import org.apache.pig.impl.logicalLayer.FrontendException;
 
 /**
  * math.ULP implements a binding to the Java function
@@ -58,6 +54,8 @@ import org.apache.pig.impl.logicalLayer.FrontendException;
 * @author ajay garg
 *
 */
+@OutputSchema("float")
+@Unique
 public class FloatUlp extends EvalFunc<Float>{
 	/**
 	 * java level API
@@ -76,9 +74,4 @@ public class FloatUlp extends EvalFunc<Float>{
             throw new IOException("Caught exception in DoubleUlp", e);
         }
     }
-            
-	@Override
-	public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.FLOAT));
-	}
 }

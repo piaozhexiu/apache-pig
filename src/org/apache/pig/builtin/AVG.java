@@ -54,6 +54,7 @@ import org.apache.pig.backend.executionengine.ExecException;
  * the preferred method of usage it is available in case the combiner can not be
  * used for a given calculation
  */
+@OutputSchema("double")
 public class AVG extends EvalFunc<Double> implements Algebraic, Accumulator<Double> {
 
     private static TupleFactory mTupleFactory = TupleFactory.getInstance();
@@ -256,11 +257,6 @@ public class AVG extends EvalFunc<Double> implements Algebraic, Accumulator<Doub
         } else {
             return null;
         }
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.DOUBLE));
     }
 
     /* (non-Javadoc)

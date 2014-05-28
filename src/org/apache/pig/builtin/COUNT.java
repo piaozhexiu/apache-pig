@@ -51,6 +51,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  * the preferred method of usage it is available in case the combiner can not be
  * used for a given calculation.
  */
+@OutputSchema("long")
 public class COUNT extends EvalFunc<Long> implements Algebraic, Accumulator<Long>{
     private static TupleFactory mTupleFactory = TupleFactory.getInstance();
 
@@ -150,11 +151,6 @@ public class COUNT extends EvalFunc<Long> implements Algebraic, Accumulator<Long
         return sum;
     }
 
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(null, DataType.LONG)); 
-    }
-    
     /* (non-Javadoc)
      * @see org.apache.pig.EvalFunc#getArgToFuncMapping()
      */

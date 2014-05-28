@@ -68,6 +68,8 @@ import org.joda.time.DateTime;
  * ...
  *</pre>
  */
+@OutputSchema("long")
+@Unique
 public class ToMilliSeconds extends EvalFunc<Long> {
 
     @Override
@@ -80,11 +82,6 @@ public class ToMilliSeconds extends EvalFunc<Long> {
         DateTime result = (DateTime) input.get(0);
 
         return result.getMillis();
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-        return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), DataType.LONG));
     }
 
     @Override

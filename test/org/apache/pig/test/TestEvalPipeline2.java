@@ -38,10 +38,11 @@ import org.apache.pig.PigConfiguration;
 import org.apache.pig.PigException;
 import org.apache.pig.PigServer;
 import org.apache.pig.builtin.BinStorage;
+import org.apache.pig.builtin.OutputSchema;
+import org.apache.pig.builtin.Unique;
 import org.apache.pig.data.BagFactory;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataByteArray;
-import org.apache.pig.data.DataType;
 import org.apache.pig.data.DefaultBagFactory;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
@@ -1143,17 +1144,14 @@ public class TestEvalPipeline2 {
         Assert.assertTrue(t.toString().equals("(hello,hello,(hello),[key#value])"));
     }
     
+    @OutputSchema("parselong:map")
+    @Unique
     static public class MapGenerate extends EvalFunc<Map<String, Integer>> {
         @Override
         public Map<String, Integer> exec(Tuple input) throws IOException {
             Map<String, Integer> m = new HashMap<String, Integer>();
             m.put("key", new Integer(input.size()));
             return m;
-        }
-        
-        @Override
-        public Schema outputSchema(Schema input) {
-            return new Schema(new Schema.FieldSchema(getSchemaName("parselong", input), DataType.MAP));
         }
     }
     

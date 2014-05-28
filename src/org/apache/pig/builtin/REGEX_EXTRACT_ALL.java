@@ -46,7 +46,8 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  * <dd><code>DEFINE GREEDY_EXTRACT REGEX_EXTRACT_ALL('false');</code></dd>
  * </dl>
  */
-
+@OutputSchema("tuple")
+@Unique
 public class REGEX_EXTRACT_ALL extends EvalFunc<Tuple> {
     private static TupleFactory tupleFactory = TupleFactory.getInstance();
     boolean mUseMatches = true;
@@ -94,15 +95,6 @@ public class REGEX_EXTRACT_ALL extends EvalFunc<Tuple> {
 
     String mExpression = null;
     Pattern mPattern = null;
-    @Override
-    public Schema outputSchema(Schema input) {
-        try {
-            return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input),
-                    DataType.TUPLE));
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
     @Override
     public List<FuncSpec> getArgToFuncMapping() throws FrontendException {
