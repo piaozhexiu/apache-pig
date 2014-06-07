@@ -58,7 +58,10 @@ import org.apache.hadoop.hbase.filter.FilterList;
 import org.apache.hadoop.hbase.filter.QualifierFilter;
 import org.apache.hadoop.hbase.filter.RegexStringComparator;
 import org.apache.hadoop.hbase.filter.RowFilter;
+import org.apache.hadoop.hbase.filter.SingleColumnValueExcludeFilter;
+import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
 import org.apache.hadoop.hbase.filter.WhileMatchFilter;
+import org.apache.hadoop.hbase.filter.WritableByteArrayComparable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
@@ -97,7 +100,10 @@ import org.apache.pig.impl.util.UDFContext;
 import org.apache.pig.impl.util.Utils;
 import org.joda.time.DateTime;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
+
 
 /**
  * A HBase implementation of LoadFunc and StoreFunc.
@@ -193,6 +199,9 @@ public class HBaseStorage extends LoadFunc implements StoreFuncInterface, LoadPu
         validOptions_.addOption("gte", true, "Records must be greater than or equal to this value");
         validOptions_.addOption("lte", true, "Records must be less than or equal to this value");
         validOptions_.addOption("regex", true, "Record must match this regular expression");
+        validOptions_.addOption("null", true, "Record must not have the specified cell, passed as -null cf:col");
+        validOptions_.addOption("notnull", true, "Record must have the specified cell, passed as -notnull cf:col");
+        validOptions_.addOption("val", true, "Record must have the specified cell value, passed as cf:col=val");
         validOptions_.addOption("cacheBlocks", true, "Set whether blocks should be cached for the scan");
         validOptions_.addOption("caching", true, "Number of rows scanners should cache");
         validOptions_.addOption("limit", true, "Per-region limit");
@@ -239,6 +248,9 @@ public class HBaseStorage extends LoadFunc implements StoreFuncInterface, LoadPu
      * <li>-gte=minKeyVal
      * <li>-lte=maxKeyVal
      * <li>-regex=match regex on KeyVal
+     * <li>-null=Load only rows which do not have cf:col
+     * <li>-notnull=Load only rows which have a value in cf:col
+     * <li>-val=Load only rows which have cf:col=value
      * <li>-limit=numRowsPerRegion max number of rows to retrieve per region
      * <li>-delim=char delimiter to use when parsing column names (default is space or comma)
      * <li>-ignoreWhitespace=(true|false) ignore spaces when parsing column names (default true)
@@ -262,7 +274,7 @@ public class HBaseStorage extends LoadFunc implements StoreFuncInterface, LoadPu
             configuredOptions_ = parser_.parse(validOptions_, optsArr);
         } catch (ParseException e) {
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp( "[-loadKey] [-gt] [-gte] [-lt] [-lte] [-regex] [-columnPrefix] [-cacheBlocks] [-caching] [-caster] [-noWAL] [-limit] [-delim] [-ignoreWhitespace] [-minTimestamp] [-maxTimestamp] [-timestamp]", validOptions_ );
+            formatter.printHelp( "[-loadKey] [-gt] [-gte] [-lt] [-lte] [-regex] [-null] [-notnull] [-val] [-columnPrefix] [-cacheBlocks] [-caching] [-caster] [-noWAL] [-limit] [-delim] [-ignoreWhitespace] [-minTimestamp] [-maxTimestamp] [-timestamp]", validOptions_ );
             throw e;
         }
 
@@ -434,6 +446,30 @@ public class HBaseStorage extends LoadFunc implements StoreFuncInterface, LoadPu
             regex_ = Utils.slashisize(configuredOptions_.getOptionValue("regex"));
             addFilter(new RowFilter(CompareOp.EQUAL, new RegexStringComparator(regex_)));
         }
+        if (configuredOptions_.hasOption("null")) {
+            for (String nullCell : configuredOptions_.getOptionValues("null")) {
+                addColumnExistenceFilter(nullCell, false);
+            }
+        }
+        if (configuredOptions_.hasOption("notnull")) {
+            for (String notNullCell : configuredOptions_.getOptionValues("notnull")) {
+                addColumnExistenceFilter(notNullCell, true);
+            }
+        }
+        if (configuredOptions_.hasOption("val")) {
+            for (String option : configuredOptions_.getOptionValues("val")) {
+                option = Utils.slashisize(option);
+                List<String> parts = Lists.newLinkedList(Splitter.on("=").split(option));
+                if (parts.size() > 1) {
+                    // Split the cf:col=val option into the column name (cf:col) and its required value (val)
+                    String columnName = parts.get(0);
+                    parts.remove(0);
+                    // the remaining parts (could be more than one if the value actually has '=' in it)
+                    String val = Joiner.on("=").join(parts);
+                    addColumnValueFilter(CompareOp.EQUAL, columnName, val);
+                }
+            }
+        }        
         if (configuredOptions_.hasOption("minTimestamp") || configuredOptions_.hasOption("maxTimestamp")){
             scan.setTimeRange(minTimestamp_, maxTimestamp_);
         }
@@ -457,6 +493,69 @@ public class HBaseStorage extends LoadFunc implements StoreFuncInterface, LoadPu
         else {
             addFiltersWithColumnPrefix(columnInfo_);
         }
+    }
+
+    private boolean isColumnRequested(byte[] cf, byte[] col) {
+        boolean isRequested = false;
+        for (ColumnInfo column : columnInfo_) {
+            isRequested |= Bytes.equals(column.getColumnFamily(), cf)    // column family of the filtered column matches, AND
+                    && (Bytes.equals(column.getColumnName(), col)        // exact match of the column
+                    || (column.getColumnName() == null && column.getColumnPrefix() == null)     // OR requesting the whole column family
+                    || (column.hasPrefixMatch(col)));  // OR it's a prefix match for the column name
+            if (isRequested) {
+                break;
+            }
+        }
+        return isRequested;
+    }
+
+    private void addColumnFilter(byte[] cf, byte[] col, CompareOp op, WritableByteArrayComparable comparable, boolean filterIfMissing) {
+        SingleColumnValueFilter filter;
+        if (isColumnRequested(cf, col)) {
+            // the column is requested in the output, so it should be returned
+            filter = new SingleColumnValueFilter(cf, col, op, comparable);
+        } else {
+            // the column is not requested in the output, so we don't need to return it
+            // but we need to add it to the scan so it can be used in filtering
+            filter = new SingleColumnValueExcludeFilter(cf, col, op, comparable);
+            scan.addColumn(cf, col);
+        }
+
+        filter.setFilterIfMissing(filterIfMissing);
+        addFilter(filter);
+    }
+
+    /**
+     * Adds a filter requiring that the specified column does or does not exist
+     */
+    private void addColumnExistenceFilter(String columnName, boolean columnMustExist) {
+        ColumnInfo column = new ColumnInfo(columnName);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Adding existence filter for " + column.toString() +
+                    (columnMustExist ? " IS NOT NULL" : " IS NULL"));
+        }
+
+        if (columnMustExist) {
+            // we want to keep only if the given column has a value
+            addColumnFilter(column.getColumnFamily(), column.getColumnName(), CompareOp.NOT_EQUAL, new BinaryComparator(new byte[0]), true);
+        } else {
+            // we want to keep only if the given column does not exist
+            addColumnFilter(column.getColumnFamily(), column.getColumnName(), CompareOp.EQUAL, new BinaryComparator(new byte[0]), false);
+        }
+    }
+
+    /**
+     * Adds a filter requiring the specified cell to contain the specified value
+     */
+    private void addColumnValueFilter(CompareOp op, String columnName, String value) {
+        ColumnInfo column = new ColumnInfo(columnName);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(String.format("Adding value filter with %s %s %s", column.toString(), op.toString(), value));
+        }
+
+        addColumnFilter(column.getColumnFamily(), column.getColumnName(), op, new BinaryComparator(Bytes.toBytes(value)), true);
     }
 
     /**

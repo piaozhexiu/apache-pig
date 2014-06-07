@@ -25,12 +25,14 @@ import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.filter.FilterList;
 import org.apache.hadoop.hbase.filter.FamilyFilter;
 import org.apache.hadoop.hbase.filter.QualifierFilter;
+import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.pig.impl.util.UDFContext;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -156,6 +158,40 @@ public class TestHBaseStorageFiltering {
     }
 
     @Test
+    public void testAddNullFilters() throws IOException, IllegalAccessException, ParseException, NoSuchFieldException {
+        Filter filter = initHBaseStorageFilter("cf1:", "-null cf1:a");
+        assertSingleColumnValueFilter((FilterList) filter, 1, Arrays.asList(CompareFilter.CompareOp.EQUAL),
+                Arrays.asList("cf1"), Arrays.asList("a"), Arrays.asList(""));
+    }
+
+    @Test
+    public void testAddNotNullFilters() throws IOException, IllegalAccessException, ParseException, NoSuchFieldException {
+        Filter filter = initHBaseStorageFilter("cf1:", "-notnull cf1:a");
+        assertSingleColumnValueFilter((FilterList) filter, 1, Arrays.asList(CompareFilter.CompareOp.NOT_EQUAL),
+                Arrays.asList("cf1"), Arrays.asList("a"), Arrays.asList(""));
+    }
+
+    @Test
+    public void testAddValueFilter() throws IOException, IllegalAccessException, ParseException, NoSuchFieldException {
+        Filter filter = initHBaseStorageFilter("cf1:", "-val cf1:a=b");
+        assertSingleColumnValueFilter((FilterList) filter, 1, Arrays.asList(CompareFilter.CompareOp.EQUAL),
+                Arrays.asList("cf1"), Arrays.asList("a"), Arrays.asList("b"));
+    }
+
+    @Test
+    public void testAddMultipleFilters() throws IOException, IllegalAccessException, ParseException, NoSuchFieldException {
+        Filter filter = initHBaseStorageFilter("cf1:",
+                "-null cf1:a -null cf1:b -notnull cf2:a -notnull cf2:b -val cf3:a=val1 -val cf3:b=val2");
+        assertSingleColumnValueFilter((FilterList) filter, 6,
+                Arrays.asList(CompareFilter.CompareOp.EQUAL, CompareFilter.CompareOp.EQUAL,
+                        CompareFilter.CompareOp.NOT_EQUAL, CompareFilter.CompareOp.NOT_EQUAL,
+                        CompareFilter.CompareOp.EQUAL, CompareFilter.CompareOp.EQUAL),
+                Arrays.asList("cf1", "cf1", "cf2", "cf2", "cf3", "cf3"),
+                Arrays.asList("a", "b", "a", "b", "a", "b"),
+                Arrays.asList("", "", "", "", "val1", "val2"));
+    }
+
+    @Test
     public void testColumnGroups() throws Exception {
         List<HBaseStorage.ColumnInfo> columnInfoList = getHBaseColumnInfo("cf1:a cf1:b cf2:foo*", "");
         Map<String, List<HBaseStorage.ColumnInfo>> groupMap = HBaseStorage.groupByFamily(columnInfoList);
@@ -260,6 +296,21 @@ public class TestHBaseStorageFiltering {
         QualifierFilter qualifierFilter = (QualifierFilter)filter;
         assertEquals("Unexpected compareOp", compareOp, qualifierFilter.getOperator());
         assertEquals("Unexpected value", value, Bytes.toString(qualifierFilter.getComparator().getValue()));
+    }
+
+    private void assertSingleColumnValueFilter(FilterList filterList, int expectedFilterListSize,
+                                               List<CompareFilter.CompareOp> ops, List<String> expectedFamilies,
+                                               List<String> expectedQualifiers,  List<String> expectedValues) {
+        assertEquals(expectedFilterListSize, filterList.getFilters().size());
+
+        for (int i = 0; i < expectedFilterListSize; i++) {
+            SingleColumnValueFilter columnValueFilter = (SingleColumnValueFilter) filterList.getFilters().get(i);
+
+            assertEquals(expectedFamilies.get(i), Bytes.toString(columnValueFilter.getFamily()));
+            assertEquals(expectedQualifiers.get(i), Bytes.toString(columnValueFilter.getQualifier()));
+            assertEquals(ops.get(i), columnValueFilter.getOperator());
+            assertEquals(expectedValues.get(i), Bytes.toString(columnValueFilter.getComparator().getValue()));
+        }
     }
 
     private void printFilters(List<Filter> filters) {
