@@ -27,6 +27,7 @@ import org.apache.pig.backend.hadoop.executionengine.physicalLayer.relationalOpe
 import org.apache.pig.impl.util.UriUtil;
 
 import java.io.IOException;
+import java.net.URI;
 
 /**
  * Class that computes the size of output for file-based systems.
@@ -77,6 +78,7 @@ public class FileBasedOutputSizeReader implements PigStatsOutputSizeReader {
      * @param sto POStore
      */
     private static String getLocationUri(POStore sto) {
-        return sto.getSFile().getFileName();
+        URI uri = URI.create(sto.getSFile().getFileName());
+        return uri.getScheme() == null ? null : uri.toString();
     }
 }

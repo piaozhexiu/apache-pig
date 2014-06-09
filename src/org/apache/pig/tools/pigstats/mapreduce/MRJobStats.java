@@ -420,32 +420,13 @@ public final class MRJobStats extends JobStats {
             LOG.warn("unable to get stores of the job");
             return;
         }
-
-        if (mapStores.size() + reduceStores.size() == 1) {
-            POStore sto = (mapStores.size() > 0) ? mapStores.get(0)
-                    : reduceStores.get(0);
-            if (!sto.isTmpStore()) {
-                long records = (mapStores.size() > 0) ? mapOutputRecords
-                        : reduceOutputRecords;
-                OutputStats ds = new OutputStats(sto.getSFile().getFileName(),
-                        hdfsBytesWritten, records, (state == JobState.SUCCESS));
-                ds.setPOStore(sto);
-                ds.setConf(conf);
-                outputs.add(ds);
-
-                if (state == JobState.SUCCESS) {
-                     MRScriptState.get().emitOutputCompletedNotification(ds);
-                }
-            }
-        } else {
-            for (POStore sto : mapStores) {
-                if (sto.isTmpStore()) continue;
-                addOneOutputStats(sto);
-            }
-            for (POStore sto : reduceStores) {
-                if (sto.isTmpStore()) continue;
-                addOneOutputStats(sto);
-            }
+        for (POStore sto : mapStores) {
+            if (sto.isTmpStore()) continue;
+            addOneOutputStats(sto);
+        }
+        for (POStore sto : reduceStores) {
+            if (sto.isTmpStore()) continue;
+            addOneOutputStats(sto);
         }
     }
 
