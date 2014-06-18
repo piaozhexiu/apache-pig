@@ -174,6 +174,10 @@ public class LogicalPlan extends BaseOperatorPlan {
         new SchemaAliasVisitor(this).visit();
         new ScalarVisitor(this, pigContext, scope).visit();
 
+        // UnionOnSchemaSetter has to be called before 
+        // ImplicitSplitInsertVisitor. See PIG-4018
+        new UnionOnSchemaSetter(this).visit();
+        
         // ImplicitSplitInsertVisitor has to be called before
         // DuplicateForEachColumnRewriteVisitor.  Detail at pig-1766
         new ImplicitSplitInsertVisitor(this).visit();
@@ -197,7 +201,6 @@ public class LogicalPlan extends BaseOperatorPlan {
             }
         }
 
-        new UnionOnSchemaSetter(this).visit();
         new CastLineageSetter(this, collector).visit();
         new ScalarVariableValidator(this).visit();
         new StoreAliasSetter(this).visit();
