@@ -444,57 +444,12 @@ public class TezDagBuilder extends TezOpPlanVisitor {
         // Configure the classes for incoming shuffles to this TezOp
         // TODO: Refactor out resetting input keys, PIG-3957
         List<PhysicalOperator> roots = tezOp.plan.getRoots();
-        if (roots.size() == 1 && roots.get(0) instanceof POPackage) {
-            POPackage pack = (POPackage) roots.get(0);
-
-            List<PhysicalOperator> succsList = tezOp.plan.getSuccessors(pack);
-            if (succsList != null) {
-                succsList = new ArrayList<PhysicalOperator>(succsList);
-            }
-            byte keyType = pack.getPkgr().getKeyType();
-            tezOp.plan.remove(pack);
-            payloadConf.set("pig.reduce.package", ObjectSerializer.serialize(pack));
+        if (roots.size() == 1 && roots.get(0) instanceof POShuffleTezLoad) {
+            POShuffleTezLoad shuffleTezLoad = (POShuffleTezLoad) roots.get(0);
+            byte keyType = shuffleTezLoad.getPkgr().getKeyType();
+            payloadConf.set("pig.reduce.package", ObjectSerializer.serialize(shuffleTezLoad));
             setIntermediateOutputKeyValue(keyType, payloadConf, tezOp);
-            POShuffleTezLoad newPack;
-            newPack = new POShuffleTezLoad(pack);
-            if (tezOp.isSkewedJoin()) {
-                newPack.setSkewedJoins(true);
-            }
-            tezOp.plan.add(newPack);
-
-            // Set input keys for POShuffleTezLoad. This is used to identify
-            // the inputs that are attached to the POShuffleTezLoad in the
-            // backend.
-            Map<Integer, String> localRearrangeMap = new TreeMap<Integer, String>();
-            for (TezOperator pred : mPlan.getPredecessors(tezOp)) {
-                if (tezOp.sampleOperator != null && tezOp.sampleOperator == pred) {
-                    // skip sample vertex input
-                } else {
-                    String inputKey = pred.getOperatorKey().toString();
-                    if (pred.isVertexGroup()) {
-                        pred = mPlan.getOperator(pred.getVertexGroupMembers().get(0));
-                    }
-                    LinkedList<POLocalRearrangeTez> lrs =
-                            PlanHelper.getPhysicalOperators(pred.plan, POLocalRearrangeTez.class);
-                    for (POLocalRearrangeTez lr : lrs) {
-                        if (lr.isConnectedToPackage()
-                                && lr.getOutputKey().equals(tezOp.getOperatorKey().toString())) {
-                            localRearrangeMap.put((int) lr.getIndex(), inputKey);
-                        }
-                    }
-                }
-            }
-            for (Map.Entry<Integer, String> entry : localRearrangeMap.entrySet()) {
-                newPack.addInputKey(entry.getValue());
-            }
-
-            if (succsList != null) {
-                for (PhysicalOperator succs : succsList) {
-                    tezOp.plan.connect(newPack, succs);
-                }
-            }
-
-            setIntermediateOutputKeyValue(pack.getPkgr().getKeyType(), payloadConf, tezOp);
+            setIntermediateOutputKeyValue(shuffleTezLoad.getPkgr().getKeyType(), payloadConf, tezOp);
         } else if (roots.size() == 1 && roots.get(0) instanceof POIdentityInOutTez) {
             POIdentityInOutTez identityInOut = (POIdentityInOutTez) roots.get(0);
             // TODO Need to fix multiple input key mapping

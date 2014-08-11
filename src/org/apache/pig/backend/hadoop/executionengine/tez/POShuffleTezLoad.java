@@ -33,6 +33,7 @@ import org.apache.pig.backend.hadoop.executionengine.physicalLayer.Result;
 import org.apache.pig.backend.hadoop.executionengine.physicalLayer.relationalOperators.POPackage;
 import org.apache.pig.data.AccumulativeBag;
 import org.apache.pig.data.DataBag;
+import org.apache.pig.data.DataType;
 import org.apache.pig.data.InternalCachedBag;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.io.NullableTuple;
@@ -53,7 +54,6 @@ public class POShuffleTezLoad extends POPackage implements TezInput {
     private boolean[] readOnce;
 
     private WritableComparator comparator = null;
-    private boolean isSkewedJoin = false;
 
     private transient Configuration conf;
 
@@ -223,20 +223,8 @@ public class POShuffleTezLoad extends POPackage implements TezInput {
         return res;
     }
 
-    public void setInputKeys(List<String> inputKeys) {
-        this.inputKeys = inputKeys;
-    }
-
     public void addInputKey(String inputKey) {
         inputKeys.add(inputKey);
-    }
-
-    public void setSkewedJoins(boolean isSkewedJoin) {
-        this.isSkewedJoin = isSkewedJoin;
-    }
-
-    public boolean isSkewedJoin() {
-        return isSkewedJoin;
     }
 
     @Override
@@ -244,4 +232,11 @@ public class POShuffleTezLoad extends POPackage implements TezInput {
         return true;
     }
 
+    @Override
+    public String name() {
+        return getAliasString() + "ShuffleTezLoad" + "(" + pkgr.name() + ")" + "["
+                + DataType.findTypeName(resultType) + "]" + "{"
+                + DataType.findTypeName(pkgr.getKeyType()) + "}" + " - "
+                + mKey.toString();
+    }
 }

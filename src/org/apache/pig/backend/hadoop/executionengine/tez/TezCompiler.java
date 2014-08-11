@@ -23,11 +23,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Stack;
+import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -1107,17 +1109,44 @@ public class TezCompiler extends PhyPlanVisitor {
     @Override
     public void visitPackage(POPackage op) throws VisitorException{
         try{
-            nonBlocking(op);
-            phyToTezOpMap.put(op, curTezOp);
-            if (op.getPkgr().getPackageType() == PackageType.JOIN) {
+            POShuffleTezLoad newOp = new POShuffleTezLoad(op);
+            plan.replace(op, newOp);
+            nonBlocking(newOp);
+
+            // Set input keys for POShuffleTezLoad. This is used to identify
+            // the inputs that are attached to the POShuffleTezLoad in the
+            // backend.
+            Map<Integer, String> localRearrangeMap = new TreeMap<Integer, String>();
+            for (TezOperator pred : tezPlan.getPredecessors(curTezOp)) {
+                if (curTezOp.sampleOperator != null && curTezOp.sampleOperator == pred) {
+                    // skip sample vertex input
+                } else {
+                    String inputKey = pred.getOperatorKey().toString();
+                    LinkedList<POLocalRearrangeTez> lrs =
+                            PlanHelper.getPhysicalOperators(pred.plan, POLocalRearrangeTez.class);
+                    for (POLocalRearrangeTez lr : lrs) {
+                        if (lr.isConnectedToPackage()
+                                && lr.getOutputKey().equals(curTezOp.getOperatorKey().toString())) {
+                            localRearrangeMap.put((int) lr.getIndex(), inputKey);
+                        }
+                    }
+                }
+            }
+
+            for (Map.Entry<Integer, String> entry : localRearrangeMap.entrySet()) {
+                newOp.addInputKey(entry.getValue());
+            }
+
+            if (newOp.getPkgr().getPackageType() == PackageType.JOIN) {
                 curTezOp.markRegularJoin();
-            } else if (op.getPkgr().getPackageType() == PackageType.GROUP) {
-                if (op.getNumInps() == 1) {
+            } else if (newOp.getPkgr().getPackageType() == PackageType.GROUP) {
+                if (newOp.getNumInps() == 1) {
                     curTezOp.markGroupBy();
-                } else if (op.getNumInps() > 1) {
+                } else if (newOp.getNumInps() > 1) {
                     curTezOp.markCogroup();
                 }
             }
+            phyToTezOpMap.put(newOp, curTezOp);
         } catch (Exception e) {
             int errCode = 2034;
             String msg = "Error compiling operator " + op.getClass().getSimpleName();
