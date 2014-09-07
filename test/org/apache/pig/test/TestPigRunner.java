@@ -45,23 +45,25 @@ import org.apache.pig.impl.PigContext;
 import org.apache.pig.impl.io.FileLocalizer;
 import org.apache.pig.impl.plan.OperatorPlan;
 import org.apache.pig.newplan.Operator;
+import org.apache.pig.tools.pigstats.EmptyPigStats;
 import org.apache.pig.tools.pigstats.InputStats;
 import org.apache.pig.tools.pigstats.JobStats;
 import org.apache.pig.tools.pigstats.OutputStats;
 import org.apache.pig.tools.pigstats.PigProgressNotificationListener;
 import org.apache.pig.tools.pigstats.PigStats;
 import org.apache.pig.tools.pigstats.PigStatsUtil;
-import org.apache.pig.tools.pigstats.EmptyPigStats;
 import org.apache.pig.tools.pigstats.mapreduce.MRJobStats;
 import org.apache.pig.tools.pigstats.mapreduce.MRPigStatsUtil;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPigRunner {
 
-    private static MiniCluster cluster;
+    private static MiniGenericCluster cluster;
+    private static String execType;
 
     private static final String INPUT_FILE = "input";
     private static final String OUTPUT_FILE = "output";
@@ -69,7 +71,8 @@ public class TestPigRunner {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        cluster = MiniCluster.buildCluster();
+        cluster = MiniGenericCluster.buildCluster();
+        execType = cluster.getExecType().name().toLowerCase();
         PrintWriter w = new PrintWriter(new FileWriter(INPUT_FILE));
         w.println("1\t2\t3");
         w.println("5\t3\t4");
@@ -89,6 +92,7 @@ public class TestPigRunner {
     @Before
     public void setUp() {
         deleteAll(new File(OUTPUT_FILE));
+        Util.resetStateForExecModeSwitch();
     }
 
     @Test
@@ -146,6 +150,8 @@ public class TestPigRunner {
 
     @Test
     public void simpleTest() throws Exception {
+        Assume.assumeTrue("Skip this test for TEZ",
+                                Util.isMapredExecType(cluster.getExecType()));
         PrintWriter w = new PrintWriter(new FileWriter(PIG_FILE));
         w.println("A = load '" + INPUT_FILE + "' as (a0:int, a1:int, a2:int);");
         w.println("B = group A by a0;");
@@ -154,7 +160,7 @@ public class TestPigRunner {
         w.close();
 
         try {
-            String[] args = { "-Dstop.on.failure=true", "-Dopt.multiquery=false", "-Dopt.fetch=false", "-Daggregate.warning=false", PIG_FILE };
+            String[] args = { "-x", execType, "-Dstop.on.failure=true", "-Dopt.multiquery=false", "-Dopt.fetch=false", "-Daggregate.warning=false", PIG_FILE };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
 
             assertTrue(stats.isSuccessful());
@@ -181,6 +187,8 @@ public class TestPigRunner {
 
     @Test
     public void simpleTest2() throws Exception {
+        Assume.assumeTrue("Skip this test for TEZ",
+                                Util.isMapredExecType(cluster.getExecType()));
         PrintWriter w = new PrintWriter(new FileWriter(PIG_FILE));
         w.println("A = load '" + INPUT_FILE + "' as (a0:int, a1:int, a2:int);");
         w.println("B = filter A by a0 == 3;");
@@ -189,7 +197,7 @@ public class TestPigRunner {
         w.close();
 
         try {
-            String[] args = { "-Dstop.on.failure=true", "-Dopt.multiquery=false", "-Daggregate.warning=false", PIG_FILE };
+            String[] args = { "-x", execType, "-Dstop.on.failure=true", "-Dopt.multiquery=false", "-Daggregate.warning=false", PIG_FILE };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
 
             assertTrue(stats instanceof EmptyPigStats);
@@ -210,6 +218,8 @@ public class TestPigRunner {
 
     @Test
     public void scriptsInDfsTest() throws Exception {
+        Assume.assumeTrue("Skip this test for TEZ",
+                                Util.isMapredExecType(cluster.getExecType()));
         PrintWriter w = new PrintWriter(new FileWriter(PIG_FILE));
         w.println("A = load '" + INPUT_FILE + "' as (a0:int, a1:int, a2:int);");
         w.println("B = group A by a0;");
@@ -220,7 +230,7 @@ public class TestPigRunner {
         Path inputInDfs = new Path(cluster.getFileSystem().getHomeDirectory(), PIG_FILE);
 
         try {
-            String[] args = { inputInDfs.toString() };
+            String[] args = { "-x", execType, inputInDfs.toString() };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
 
             assertTrue(stats.isSuccessful());
@@ -242,13 +252,15 @@ public class TestPigRunner {
 
     @Test
     public void orderByTest() throws Exception {
+        Assume.assumeTrue("Skip this test for TEZ",
+                                Util.isMapredExecType(cluster.getExecType()));
         PrintWriter w = new PrintWriter(new FileWriter(PIG_FILE));
         w.println("A = load '" + INPUT_FILE + "' as (a0:int, a1:int, a2:int);");
         w.println("B = order A by a0;");
         w.println("C = limit B 2;");
         w.println("store C into '" + OUTPUT_FILE + "';");
         w.close();
-        String[] args = { PIG_FILE };
+        String[] args = { "-x", execType, PIG_FILE };
         try {
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
             assertTrue(stats.isSuccessful());
@@ -276,6 +288,8 @@ public class TestPigRunner {
 
     @Test
     public void simpleMultiQueryTest() throws Exception {
+        Assume.assumeTrue("Skip this test for TEZ",
+                                Util.isMapredExecType(cluster.getExecType()));
         final String OUTPUT_FILE_2 = "output2";
 
         PrintWriter w = new PrintWriter(new FileWriter(PIG_FILE));
@@ -287,7 +301,7 @@ public class TestPigRunner {
         w.close();
 
         try {
-            String[] args = { PIG_FILE };
+            String[] args = { "-x", execType, PIG_FILE };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
             assertTrue(stats.isSuccessful());
             assertTrue(stats.getJobGraph().size() == 1);
@@ -323,6 +337,8 @@ public class TestPigRunner {
 
     @Test
     public void simpleMultiQueryTest2() throws Exception {
+        Assume.assumeTrue("Skip this test for TEZ",
+                                Util.isMapredExecType(cluster.getExecType()));
         final String OUTPUT_FILE_2 = "output2";
 
         PrintWriter w = new PrintWriter(new FileWriter(PIG_FILE));
@@ -336,7 +352,7 @@ public class TestPigRunner {
         w.close();
 
         try {
-            String[] args = { PIG_FILE };
+            String[] args = { "-x", execType, PIG_FILE };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
             assertTrue(stats.isSuccessful());
             assertTrue(stats.getJobGraph().size() == 1);
@@ -374,6 +390,8 @@ public class TestPigRunner {
 
     @Test
     public void MQDepJobFailedTest() throws Exception {
+        Assume.assumeTrue("Skip this test for TEZ",
+                                Util.isMapredExecType(cluster.getExecType()));
         final String OUTPUT_FILE_2 = "output2";
         PrintWriter w = new PrintWriter(new FileWriter(PIG_FILE));
         w.println("A = load '" + INPUT_FILE + "' as (name:chararray, a1:int, a2:int);");
@@ -383,7 +401,7 @@ public class TestPigRunner {
         w.println("store C into '" + OUTPUT_FILE + "';");
         w.close();
         try {
-            String[] args = { PIG_FILE };
+            String[] args = { "-x", execType, PIG_FILE };
             PigStats stats = PigRunner.run(args, null);
             Iterator<JobStats> iter = stats.getJobGraph().iterator();
             while (iter.hasNext()) {
@@ -410,7 +428,7 @@ public class TestPigRunner {
         w.println("C = foreach B generate group, COUNT(A);");
         w.println("store C into '" + OUTPUT_FILE + "';");
         w.close();
-        String[] args = { "-c", PIG_FILE };
+        String[] args = { "-x", execType, "-c", PIG_FILE };
         PigStats stats = PigRunner.run(args, null);
         assertTrue(stats.getReturnCode() == ReturnCode.PIG_EXCEPTION);
         // TODO: error message has changed. Need to catch the new message generated from the
@@ -422,14 +440,14 @@ public class TestPigRunner {
 
     @Test
     public void simpleNegativeTest2() throws Exception {
-        String[] args = { "-c", "-e", "this is a test" };
+        String[] args = { "-x", execType, "-c", "-e", "this is a test" };
         PigStats stats = PigRunner.run(args, new TestNotificationListener());
         assertTrue(stats.getReturnCode() == ReturnCode.ILLEGAL_ARGS);
     }
 
     @Test
     public void simpleNegativeTest3() throws Exception {
-        String[] args = { "-c", "-y" };
+        String[] args = { "-x", execType, "-c", "-y" };
         PigStats stats = PigRunner.run(args, new TestNotificationListener());
         assertTrue(stats.getReturnCode() == ReturnCode.PARSE_EXCEPTION);
         assertEquals("Found unknown option (-y) at position 2",
@@ -438,6 +456,8 @@ public class TestPigRunner {
 
     @Test
     public void NagetiveTest() throws Exception {
+        Assume.assumeTrue("Skip this test for TEZ",
+                                Util.isMapredExecType(cluster.getExecType()));
         final String OUTPUT_FILE_2 = "output2";
         PrintWriter w = new PrintWriter(new FileWriter(PIG_FILE));
         w.println("A = load '" + INPUT_FILE + "' as (a0:int, a1:int, a2:int);");
@@ -451,7 +471,7 @@ public class TestPigRunner {
         w.close();
 
         try {
-            String[] args = { PIG_FILE };
+            String[] args = { "-x", execType, PIG_FILE };
             PigStats stats = PigRunner.run(args, null);
             assertTrue(!stats.isSuccessful());
             assertTrue(stats.getReturnCode() == ReturnCode.PARTIAL_FAILURE);
@@ -487,6 +507,8 @@ public class TestPigRunner {
 
     @Test
     public void testCounterName() throws Exception {
+        Assume.assumeTrue("Skip this test for TEZ",
+                                Util.isMapredExecType(cluster.getExecType()));
         String s = "jdbc:hsqldb:file:/tmp/batchtest;hsqldb.default_table_type=cached;hsqldb.cache_rows=100";
         String name = MRPigStatsUtil.getMultiInputsCounterName(s, 0);
         assertEquals(MRPigStatsUtil.MULTI_INPUTS_RECORD_COUNTER + "_0_batchtest", name);
@@ -500,6 +522,8 @@ public class TestPigRunner {
 
     @Test
     public void testLongCounterName() throws Exception {
+        Assume.assumeTrue("Skip this test for TEZ",
+                                Util.isMapredExecType(cluster.getExecType()));
         // Pig now restricts the string size of its counter name to less than 64 characters.
         PrintWriter w = new PrintWriter(new FileWriter("myinputfile"));
         w.println("1\t2\t3");
@@ -519,7 +543,7 @@ public class TestPigRunner {
         w1.close();
 
         try {
-            String[] args = { PIG_FILE };
+            String[] args = { "-x", execType, PIG_FILE };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
 
             assertTrue(stats.isSuccessful());
@@ -554,7 +578,7 @@ public class TestPigRunner {
         w1.close();
 
         try {
-            String[] args = { PIG_FILE };
+            String[] args = { "-x", execType, PIG_FILE };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
 
             assertTrue(stats.isSuccessful());
@@ -577,7 +601,6 @@ public class TestPigRunner {
 
     @Test
     public void testDuplicateCounterName2() throws Exception {
-
         PrintWriter w1 = new PrintWriter(new FileWriter(PIG_FILE));
         w1.println("A = load '" + INPUT_FILE + "' as (a0:int, a1:int, a2:int);");
         w1.println("B = filter A by a0 > 3;");
@@ -586,7 +609,7 @@ public class TestPigRunner {
         w1.close();
 
         try {
-            String[] args = { PIG_FILE };
+            String[] args = { "-x", execType, PIG_FILE };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
 
             assertTrue(stats.isSuccessful());
@@ -612,7 +635,7 @@ public class TestPigRunner {
     public void testRegisterExternalJar() throws Exception {
         String jarName = Util.findPigJarName();
 
-        String[] args = { "-Dpig.additional.jars=" + jarName,
+        String[] args = { "-x", execType, "-Dpig.additional.jars=" + jarName,
                 "-Dmapred.job.queue.name=default",
                 "-e", "A = load '" + INPUT_FILE + "';store A into '" + OUTPUT_FILE + "';\n" };
         PigStats stats = PigRunner.run(args, new TestNotificationListener());
@@ -622,7 +645,7 @@ public class TestPigRunner {
 
         assertNotNull(ctx);
 
-        assertTrue(ctx.extraJars.contains(ClassLoader.getSystemResource(jarName)));
+        assertTrue(ctx.extraJars.contains(ClassLoader.getSystemResource("pig-withouthadoop.jar")));
         assertTrue("default", ctx.getProperties().getProperty(MRConfiguration.JOB_QUEUE_NAME) != null
                 && ctx.getProperties().getProperty(MRConfiguration.JOB_QUEUE_NAME).equals("default")
                 || ctx.getProperties().getProperty("mapreduce.job.queuename") != null
@@ -642,7 +665,7 @@ public class TestPigRunner {
         w.close();
 
         try {
-            String[] args = { PIG_FILE };
+            String[] args = { "-x", execType, PIG_FILE };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
             assertTrue(stats.isSuccessful());
         } finally {
@@ -658,7 +681,7 @@ public class TestPigRunner {
         w.close();
 
         try {
-            String[] args = { PIG_FILE };
+            String[] args = { "-x", execType, PIG_FILE };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
 
             assertTrue(!stats.isSuccessful());
@@ -670,7 +693,7 @@ public class TestPigRunner {
 
     @Test // PIG-2006
     public void testEmptyFile() throws IOException {
-        File f1 = new File( PIG_FILE );
+        File f1 = new File(PIG_FILE);
 
         FileWriter fw1 = new FileWriter(f1);
         fw1.close();
@@ -698,7 +721,7 @@ public class TestPigRunner {
         w.close();
 
         try {
-            String[] args = { PIG_FILE };
+            String[] args = { "-x", execType, PIG_FILE };
             PigStats stats = PigRunner.run(args, null);
 
             assertTrue(!stats.isSuccessful());
@@ -721,7 +744,7 @@ public class TestPigRunner {
         w.close();
 
         try {
-            String[] args = { PIG_FILE };
+            String[] args = { "-x", execType, PIG_FILE };
             PigStats stats = PigRunner.run(args, null);
 
             assertTrue(!stats.isSuccessful());
@@ -751,7 +774,7 @@ public class TestPigRunner {
         w1.close();
 
         try {
-            String[] args = { PIG_FILE };
+            String[] args = { "-x", execType, PIG_FILE };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
 
             assertTrue(stats.isSuccessful());
@@ -783,7 +806,7 @@ public class TestPigRunner {
         w1.close();
 
         try {
-            String[] args = { PIG_FILE };
+            String[] args = { "-x", execType, PIG_FILE };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
 
             assertTrue(stats.isSuccessful());
@@ -815,7 +838,7 @@ public class TestPigRunner {
         w1.close();
 
         try {
-            String[] args = { "-Dpig.disable.counter=true", PIG_FILE };
+            String[] args = { "-x", execType, "-Dpig.disable.counter=true", PIG_FILE };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
 
             assertTrue(stats.isSuccessful());
@@ -840,6 +863,9 @@ public class TestPigRunner {
 
     @Test             //Pig-2358
     public void testGetHadoopCounters() throws Exception {
+        Assume.assumeTrue("Skip this test for TEZ",
+                                Util.isMapredExecType(cluster.getExecType()));
+
         final String OUTPUT_FILE_2 = "output2";
 
         PrintWriter w = new PrintWriter(new FileWriter(PIG_FILE));
@@ -853,7 +879,7 @@ public class TestPigRunner {
         w.close();
 
         try {
-            String[] args = { PIG_FILE };
+            String[] args = { "-x", execType, PIG_FILE };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
 
             Counters counter= ((MRJobStats)stats.getJobGraph().getSinks().get(0)).getHadoopCounters();
@@ -892,7 +918,7 @@ public class TestPigRunner {
         w1.close();
 
         try {
-            String[] args = { "-Dpig.disable.counter=true", PIG_FILE };
+            String[] args = { "-x", execType, "-Dpig.disable.counter=true", PIG_FILE };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
 
             assertTrue(stats.isSuccessful());
@@ -924,6 +950,8 @@ public class TestPigRunner {
      */
     @Test
     public void testStopOnFailure() throws Exception {
+        Assume.assumeTrue("Skip this test for TEZ",
+                                Util.isMapredExecType(cluster.getExecType()));
 
         PrintWriter w1 = new PrintWriter(new FileWriter(PIG_FILE));
         w1.println("A1 = load '" + INPUT_FILE + "';");
@@ -937,7 +965,7 @@ public class TestPigRunner {
         w1.close();
 
         try {
-            String[] args = { "-F", PIG_FILE };
+            String[] args = { "-x", execType, "-F", PIG_FILE };
             PigStats stats = PigRunner.run(args, new TestNotificationListener());
 
             assertTrue(!stats.isSuccessful());
