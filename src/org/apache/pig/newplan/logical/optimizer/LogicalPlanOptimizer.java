@@ -86,7 +86,7 @@ public class LogicalPlanOptimizer extends PlanOptimizer {
 
     protected List<Set<Rule>> buildRuleSets() {
         List<Set<Rule>> ls = new ArrayList<Set<Rule>>();
-        
+
         // Logical expression simplifier
         Set <Rule> s = new HashSet<Rule>();
         // add constant calculator rule
