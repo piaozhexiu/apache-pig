@@ -846,42 +846,45 @@ public class JobControlCompiler{
 
                 if(pack!=null) {
                     if(pack.getPivot()!=-1) {
-                            //Set value for PIG_HII_ROLLUP_OPTIMIZABLE to true
-                            conf.setBoolean(PigConstants.PIG_HII_ROLLUP_OPTIMIZABLE, true);
-                            //Set the pivot value
-                            conf.setInt(PigConstants.PIG_HII_ROLLUP_PIVOT, pack.getPivot());
-                            //Set the index of the first field involves in ROLLUP
-                            conf.setInt(PigConstants.PIG_HII_ROLLUP_FIELD_INDEX, pack.getRollupFieldIndex());
-                            //Set the original index of the first field involves in ROLLUP in case it was moved to the end
-                            //(if we have the combination of cube and rollup)
-                            conf.setInt(PigConstants.PIG_HII_ROLLUP_OLD_FIELD_INDEX, pack.getRollupOldFieldIndex());
-                            //Set the size of total fields that involve in CUBE clause
-                            conf.setInt(PigConstants.PIG_HII_NUMBER_TOTAL_FIELD, pack.getDimensionSize());
-                            //Set number of algebraic functions that used after rollup
-                            conf.setInt(PigConstants.PIG_HII_NUMBER_ALGEBRAIC, pack.getNumberAlgebraic());
-                            //Set number of reducer to 1 due to using IRG algorithm
-                            if(pack.getPivot() == 0 && !mro.reducePlan.isEmpty()) {
-                                updateNumReducers(plan, mro, nwJob);
-                            }
+                        //Set value for PIG_HII_ROLLUP_OPTIMIZABLE to true
+                        conf.setBoolean(PigConstants.PIG_HII_ROLLUP_OPTIMIZABLE, true);
+                        //Set the pivot value
+                        conf.setInt(PigConstants.PIG_HII_ROLLUP_PIVOT, pack.getPivot());
+                        //Set the index of the first field involves in ROLLUP
+                        conf.setInt(PigConstants.PIG_HII_ROLLUP_FIELD_INDEX, pack.getRollupFieldIndex());
+                        //Set the original index of the first field involves in ROLLUP in case it was moved to the end
+                        //(if we have the combination of cube and rollup)
+                        conf.setInt(PigConstants.PIG_HII_ROLLUP_OLD_FIELD_INDEX, pack.getRollupOldFieldIndex());
+                        //Set the size of total fields that involve in CUBE clause
+                        conf.setInt(PigConstants.PIG_HII_NUMBER_TOTAL_FIELD, pack.getDimensionSize());
+                        //Set number of algebraic functions that used after rollup
+                        conf.setInt(PigConstants.PIG_HII_NUMBER_ALGEBRAIC, pack.getNumberAlgebraic());
+                        //Set number of reducer to 1 due to using IRG algorithm
+                        if(pack.getPivot() == 0 && !mro.reducePlan.isEmpty()) {
+                            updateNumReducers(plan, mro, nwJob);
+                        }
                     }
                 }
 
-                if(!pigContext.inIllustrator)
+                if (!pigContext.inIllustrator) {
                     mro.reducePlan.remove(pack);
-                nwJob.setMapperClass(PigMapReduce.Map.class);
+                }
 
-                if(pack!=null)
-                    if(pack.getPivot()!=-1)
-                        nwJob.setMapperClass(PigMapReduce.MapRollupHII.class);
+                if (pack!=null && pack.getPivot()!=-1) {
+                    nwJob.setMapperClass(PigMapReduce.MapRollupHII.class);
+                } else {
+                    nwJob.setMapperClass(PigMapReduce.Map.class);
+                }
 
                 nwJob.setReducerClass(PigMapReduce.Reduce.class);
 
                 // Set Rollup Partitioner in case the pivot is not equal to -1
                 // and the custormPartitioner name is our rollup partitioner.
                 if (mro.customPartitioner != null) {
-                    if(mro.customPartitioner.equals(ROLLUP_PARTITIONER)){
-                        if(pack.getPivot()!=-1)
+                    if (mro.customPartitioner.equals(ROLLUP_PARTITIONER)) {
+                        if (pack.getPivot()!=-1) {
                             nwJob.setPartitionerClass(PigContext.resolveClassName(mro.customPartitioner));
+                        }
                     } else {
                         nwJob.setPartitionerClass(PigContext.resolveClassName(mro.customPartitioner));
                     }
